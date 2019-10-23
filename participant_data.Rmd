@@ -1,0 +1,13 @@
+---
+title: "participant data"
+author: "Kristen Fedak"
+date: "10/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load initial data
+
