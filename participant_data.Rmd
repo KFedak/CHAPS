@@ -7,7 +7,44 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
 ```
 
-## Load initial data
+## Load data
+
+```{r}
+bsln_n299 <- read.csv("../c7baseln_n299_apr2018update.csv")
+```
+
+* create participant data
+```{r}
+participants <- bsln_n299 %>%
+                  select(id, agemon, bmi_cat, bmipct, bmi, bmipct95, bmidif95, height, race_cat, livew_smok, smokw_child, vis_month, weight, gender, age, c7hhb_8) %>%
+                 rename(age_months = "agemon",
+                        age_years = "age",
+                        sex = "gender",
+                        ever_asthma = "c7hhb_8",
+                        bmi_pct = "bmipct",
+                        visit_month = "vis_month",
+                        live_smoke = "livew_smok", #live with a smoker
+                        around_smoke = "smokw_child") #people smoke around child in home or car
+
+
+```
+
+* create lung function data
+```{r}
+lung_function <- bsln_n299 %>%
+                  select(id, 623:734)
+
+#pre-bronchodilator test
+pre_lf <- lung_function %>%
+          dplyr::select(id, contains("Pre"))
+
+#post-bronchodilator test
+post_lf <- lung_function %>%
+          dplyr::select(id, contains("Post"))
+
+```
 
