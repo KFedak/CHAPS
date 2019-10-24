@@ -1,0 +1,84 @@
+---
+title: "participant data"
+author: "Kristen Fedak"
+date: "10/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+```
+
+## Load data
+
+```{r}
+bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
+  na = (c(".N", "N", "NA")),
+  col_types = cols(.default = "c")) %>%
+  rename_all(tolower)
+```
+
+* create participant data
+
+```{r}
+participants <- bsln_n299 %>%
+  dplyr::select(id, agemon,
+                bmi_cat, bmipct, bmi, bmipct95, bmidif95,
+                height, weight, gender, age,
+                race_cat,
+                livew_smok, smokw_child,
+                vis_month,
+                c7hhb_8, c7sm_2) %>%
+  dplyr::rename(age_months = "agemon",
+                age_years = "age",
+                sex = "gender",
+                asthma_ever = "c7hhb_8",
+                bmi_pct = "bmipct",
+                visit_month = "vis_month",
+                smoke_live = "livew_smok", #live with a smoker
+                smoke_around = "smokw_child", #people smoke around child in home or car
+                smoke_current = "c7sm_2") #current smoker
+```
+
+* create lung function data (all, pre-bronchodilator, post-bronchodilator)
+
+```{r}
+#all lung function data
+lung_function <- bsln_n299 %>%
+  dplyr::select(id, 623:734)
+
+#pre-bronchodilator test
+pre_lf <- lung_function %>%
+  dplyr::select(id, contains("Pre"))
+
+#post-bronchodilator test
+post_lf <- lung_function %>%
+  dplyr::select(id, contains("Post"))
+```
+
+* turn lung function data into long format
+
+```{r}
+pre_lf_long <- pre_lf %>%
+  dplyr::rename(fev1fvc_pre1 = "pre_fev1fvc") %>%
+  pivot_longer(cols = -c("id", "qcgrade_pre", "preacc", "numpretrials"),
+               names_to =  "var", values_to = "value") %>%
+               mutate(trial_n = var) %>%
+               mutate(trial_n = as.numeric(gsub("^.*_pre", "", trial_n)),
+                      var = gsub("(.*)_.*", "\\1", var),
+                      value = as.numeric(value))
+
+post_lf_long <- post_lf %>%
+  dplyr::rename(fev1fvc_post1 = "post_fev1fvc") %>%
+  pivot_longer(cols = -c("id", "qcgrade_post", "postacc", "numposttrials"),
+               names_to =  "var", values_to = "value") %>%
+               mutate(trial_n = var) %>%
+               mutate(trial_n = as.numeric(gsub("^.*_post", "", trial_n)),
+                      var = gsub("(.*)_.*", "\\1", var),
+                      value = as.numeric(value))
+```
+
+
+
