@@ -1,5 +1,5 @@
 ---
-title: "participant data"
+title: "load data"
 author: "Kristen Fedak"
 date: "10/23/2019"
 output: html_document
@@ -11,7 +11,7 @@ library(tidyverse)
 library(readxl)
 ```
 
-## Load data
+## baseln_n299 data
 
 ```{r}
 bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
@@ -80,5 +80,13 @@ post_lf_long <- post_lf %>%
                       value = as.numeric(value))
 ```
 
+# Save .RDS files
+
+```{r}
+write_rds(participants, "participants.rds")
+write_rds(lung_function, "lungfunction_all.rds")
+write_rds(pre_lf_long, "pre_bronchodilator_lf.rds")
+write_rds(post_lf_long, "post_bronchodilator_lf.rds")
+```
 
 
