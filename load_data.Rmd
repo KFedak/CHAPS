@@ -57,6 +57,8 @@ participants <- bsln_n299 %>%
                 height = as.numeric(height),
                 weight = as.numeric(weight),
                 age_years = as.numeric(age_years))
+
+mutate_if(vars(matches("^smoke|"), as.factor))
 ```
 
 * create lung function data (all, pre-bronchodilator, post-bronchodilator)
@@ -98,12 +100,57 @@ post_lf_long <- post_lf %>%
 ```
 
 # Air Pollution Exposure metrics
+
+* year prior
+
 ```{r}
+# CO
 co_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
                               sheet = 2) %>%
               rename_all(tolower) %>%
-              dplyr::rename(id = "subject")
+              dplyr::rename(id = "subject") %>%
+             # dplyr::mutate(pol = "co") %>%
+              pivot_longer(cols = -c("id", "month", "day", "year"),
+                           names_to = "lag", values_to = "co")
+
+# ozone
+o3_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
+                              sheet = 3) %>%
+              rename_all(tolower) %>%
+              dplyr::rename(id = "subject") %>%
+              pivot_longer(cols = -c("id", "month", "day", "year"),
+                           names_to = "lag", values_to = "ozone")
+
+#PM10
+pm10_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
+                              sheet = 4) %>%
+              rename_all(tolower) %>%
+              dplyr::rename(id = "subject") %>%
+              pivot_longer(cols = -c("id", "month", "day", "year"),
+                           names_to = "lag", values_to = "pm10")
+
+
+#PM25
+pm25_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
+                              sheet = 5) %>%
+              rename_all(tolower) %>%
+              dplyr::rename(id = "subject") %>%
+              pivot_longer(cols = -c("id", "month", "day", "year"),
+                           names_to = "lag", values_to = "pm25")
+
+#combine
+
+exposures_yrprior <- co_yrprior %>%
+                    left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+                    left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+                    left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+                    pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
+                                 names_to = "pollutant", values_to = "val")
+
+
+
 ```
+
 
 
 
@@ -115,6 +162,7 @@ write_rds(participants, "participants.rds")
 write_rds(lung_function, "lungfunction_all.rds")
 write_rds(pre_lf_long, "pre_bronchodilator_lf.rds")
 write_rds(post_lf_long, "post_bronchodilator_lf.rds")
+write_rds(exposures_yrprior, "exposures_year_prior.rds")
 ```
 
 
