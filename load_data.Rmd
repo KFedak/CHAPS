@@ -57,8 +57,6 @@ participants <- bsln_n299 %>%
                 height = as.numeric(height),
                 weight = as.numeric(weight),
                 age_years = as.numeric(age_years))
-
-mutate_if(vars(matches("^smoke|"), as.factor))
 ```
 
 * create lung function data (all, pre-bronchodilator, post-bronchodilator)
@@ -147,8 +145,13 @@ exposures_yrprior <- co_yrprior %>%
                     pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
                                  names_to = "pollutant", values_to = "val")
 
+# split to 30-day daily lag data vs averaged over different time periods data
 
+exposures_30daylags <- exposures_yrprior %>%
+                      filter(grepl("lag", lag))
 
+exposures_avg_12months <- exposures_yrprior %>%
+                      filter(grepl("before", lag))
 ```
 
 
@@ -162,7 +165,8 @@ write_rds(participants, "participants.rds")
 write_rds(lung_function, "lungfunction_all.rds")
 write_rds(pre_lf_long, "pre_bronchodilator_lf.rds")
 write_rds(post_lf_long, "post_bronchodilator_lf.rds")
-write_rds(exposures_yrprior, "exposures_year_prior.rds")
+write_rds(exposures_30daylags, "exposures_30day_lags.rds")
+write_rds(exposures_avg_12months, "exposures_avg_12months.rds")
 ```
 
 
