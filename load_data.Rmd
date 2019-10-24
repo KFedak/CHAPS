@@ -11,7 +11,7 @@ library(tidyverse)
 library(readxl)
 ```
 
-## baseln_n299 data
+## baseln_n299 data (Participant info, lung function tests)
 
 ```{r}
 bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
@@ -39,7 +39,24 @@ participants <- bsln_n299 %>%
                 visit_month = "vis_month",
                 smoke_live = "livew_smok", #live with a smoker
                 smoke_around = "smokw_child", #people smoke around child in home or car
-                smoke_current = "c7sm_2") #current smoker
+                smoke_current = "c7sm_2") %>% #current smoker 
+  dplyr::mutate(id = as.factor(id),
+                bmi_cat = as.factor(bmi_cat),
+                sex = as.factor(sex),
+                race_cat = as.factor(race_cat),
+                smoke_live = as.factor(smoke_live),
+                smoke_around = as.factor(smoke_around),
+                smoke_current = as.factor(smoke_current),
+                asthma_ever = as.factor(asthma_ever),
+                visit_month = as.factor(visit_month), 
+                age_months = as.numeric(age_months),
+                bmi = as.numeric(bmi),
+                bmi_pct = as.numeric(bmi_pct),
+                bmipct95 = as.numeric(bmipct95),
+                bmidif95 = as.numeric(bmidif95),
+                height = as.numeric(height),
+                weight = as.numeric(weight),
+                age_years = as.numeric(age_years))
 ```
 
 * create lung function data (all, pre-bronchodilator, post-bronchodilator)
@@ -79,6 +96,17 @@ post_lf_long <- post_lf %>%
                       var = gsub("(.*)_.*", "\\1", var),
                       value = as.numeric(value))
 ```
+
+# Air Pollution Exposure metrics
+```{r}
+co_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
+                              sheet = 2) %>%
+              rename_all(tolower) %>%
+              dplyr::rename(id = "subject")
+```
+
+
+
 
 # Save .RDS files
 
