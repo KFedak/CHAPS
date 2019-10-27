@@ -97,7 +97,7 @@ post_lf_long <- post_lf %>%
                       value = as.numeric(value))
 ```
 
-# Air Pollution Exposure metrics
+# Air Pollution Exposure Metrics
 
 * year prior
 
@@ -154,19 +154,34 @@ exposures_avg_12months <- exposures_yrprior %>%
                       filter(grepl("before", lag))
 ```
 
+#lifetime exposures to air pollution, PAHs
 
+```{r}
+pah_lifetime <- read_xlsx("../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx",
+                              sheet = 2) %>%
+              rename_all(tolower) %>%
+              rename("exposure_month" = month,
+                     "exposure_year" = year) %>%
+              mutate(grep(ifelse(type == "0", "single", type))
+
+unique(pah_lifetime$type)
+%>%
+              pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month"),
+                           names_to = "pollutant", values_to = "val")
+  
+```
 
 
 
 # Save .RDS files
 
 ```{r}
-write_rds(participants, "participants.rds")
-write_rds(lung_function, "lungfunction_all.rds")
-write_rds(pre_lf_long, "pre_bronchodilator_lf.rds")
-write_rds(post_lf_long, "post_bronchodilator_lf.rds")
-write_rds(exposures_30daylags, "exposures_30day_lags.rds")
-write_rds(exposures_avg_12months, "exposures_avg_12months.rds")
+write_rds(participants, "output_files/participants.rds")
+write_rds(lung_function, "output_files/lungfunction_all.rds")
+write_rds(pre_lf_long, "output_files/pre_bronchodilator_lf.rds")
+write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
+write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
+write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
 ```
 
 
