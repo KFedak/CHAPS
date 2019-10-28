@@ -75,7 +75,7 @@ str(participants)
 kable(head(participants))
 ```
 
-# Lung Function Test data
+# Lung function test data
 
 * from "c7baseln_n299_apr2018update" dataset
 * create lung function data (all, pre-bronchodilator, post-bronchodilator)
@@ -122,7 +122,7 @@ post_lf_long <- post_lf %>%
 str(pre_lf_long)
 ```
 
-## Example data
+## Example data:
 
 * pre-bronchodilator test
 ```{r}
@@ -206,7 +206,7 @@ str(exposures_30daylags)
 kable(head(exposures_30daylags))
 ```
 
-## Column names and types - 3, 6, and 12-month prior averages
+## Column names and types - 3, 6, and 12-month prior averages:
 
 ```{r}
 str(exposures_avg_12months)
@@ -362,6 +362,4 @@ write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
 write_rds(exposures_lifetime, "output_files/exposures_lifetime.rds")
 write_rds(station_distances, "output_files/station_distances.rds")
 ```
-
-
 
