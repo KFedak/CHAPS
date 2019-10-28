@@ -220,6 +220,8 @@ kable(head(exposures_avg_12months))
 
 # Lifetime exposures to air pollutants and PAHs
 
+*load each pollutant (PAH, EC, NO2, and NOx on one file in single tab; CO, PM2.5, PM10, and O3 on second file in seperate tabs)
+
 ```{r}
 #PAH, EC, NO2, NOx
 
@@ -245,17 +247,65 @@ exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1) %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
-         ) %>%
+         "co" = 'co-monthly average 8-hr daily max concentration (ppm) -avg',
+         "station_distance_co" = 'co-dist-1',
+         "station_number_co" = 'co-nst-1') %>%
   mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
-  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type"),
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_co", "station_number_co"),
                names_to = "pollutant",
                values_to = "val") %>%
-  mutate(metric = as.factor(gsub("(meanmonth).*", "\\1", pollutant)),
-         pollutant = as.factor(gsub("^meanmonth(.*)", "\\1", pollutant))) %>%
   rename(date_visit = "vis_date")
 
+exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "pm25" = 'pm25-monthly average 24-hr concentration (ug/m3) -avg',
+         "station_distance_pm25" = 'pm25-dist-1',
+         "station_number_pm25" = 'pm25-nst-1') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_pm25", "station_number_pm25"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
 
+exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "pm10" = 'pm10-monthly average 24-hr concentration (ug/m3) -avg',
+         "station_distance_pm10" = 'pm10-dist-1',
+         "station_number_pm10" = 'pm10-nst-1') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_pm10", "station_number_pm10"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
+
+exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "o3" = 'o3-monthly average of daily maximum 8-hr average  concentration (ppb) -avg',
+         "station_distance_o3" = 'o3-dist-2',
+         "station_number_o3" = 'o3-nst-2') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_o3", "station_number_o3"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
 ```
+
+* combine data for all pollutants
+```{r}
+exposures_lifetime_ <- exposures_lifetime %>%
+  left_join(exposures_lifetime_co, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
+  left_join(exposures_lifetime_o3, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
+  left_join(exposures_lifetime_pm25, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
+  left_join(exposures_lifetime_pm10, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val"))
+  
+```
+
 
 ## Column names and types:
 
