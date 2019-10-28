@@ -190,7 +190,6 @@ write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
 write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
 write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
 write_rds(pah_lifetime, "output_files/exposures_pah_lifetime.rds")
-
 ```
 
 
