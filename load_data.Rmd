@@ -139,19 +139,23 @@ pm25_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures
 #combine
 
 exposures_yrprior <- co_yrprior %>%
-                    left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
-                    left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
-                    left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
                     pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
-                                 names_to = "pollutant", values_to = "val")
+                                 names_to = "pollutant", values_to = "val") %>%
+  rename(metric = "lag") %>%
+  mutate(date_exposure = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
+                                             format = "%F", tz = "US/Pacific"))) %>%
+  select(-year, -month, -day)
 
 # split to 30-day daily lag data vs averaged over different time periods data
 
 exposures_30daylags <- exposures_yrprior %>%
-                      filter(grepl("lag", lag))
+                      filter(grepl("lag", metric))
 
 exposures_avg_12months <- exposures_yrprior %>%
-                      filter(grepl("before", lag))
+                      filter(grepl("before", metric))
 ```
 
 #lifetime exposures to air pollution, PAHs
