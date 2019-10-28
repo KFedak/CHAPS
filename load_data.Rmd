@@ -6,12 +6,15 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(readxl)
+library(knitr)
 ```
 
-## baseln_n299 data (Participant info, lung function tests)
+#  Participant info
+
+*  from "c7baseln_n299_apr2018update" dataset
 
 ```{r}
 bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
@@ -20,7 +23,7 @@ bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
   rename_all(tolower)
 ```
 
-* create participant data
+* create participant data; select variables of interest from list of over 700.
 
 ```{r}
 participants <- bsln_n299 %>%
@@ -57,8 +60,24 @@ participants <- bsln_n299 %>%
                 height = as.numeric(height),
                 weight = as.numeric(weight),
                 age_years = as.numeric(age_years))
+
 ```
 
+## Column names and types:
+
+```{r}
+str(participants)
+```
+
+## Example data: 
+
+```{r}
+kable(head(participants))
+```
+
+# Lung Function Test data
+
+* from "c7baseln_n299_apr2018update" dataset
 * create lung function data (all, pre-bronchodilator, post-bronchodilator)
 
 ```{r}
@@ -97,44 +116,59 @@ post_lf_long <- post_lf %>%
                       value = as.numeric(value))
 ```
 
-# Air Pollution Exposure Metrics
-
-* year prior
+## Column names and types:
 
 ```{r}
+str(pre_lf_long)
+```
+
+## Example data
+
+* pre-bronchodilator test
+```{r}
+kable(head(pre_lf_long))
+```
+
+* post-bronchodilator test
+```{r}
+kable(head(post_lf_long))
+```
+
+# Air Pollution Exposure Metrics
+
+* daily for 30-day prior and averaged 3, 6, and 12-month prior, from the data in the "Yearprior_Exposure" folder
+
+```{r}
+
+year_prior <- "../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx"
 # CO
-co_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
-                              sheet = 2) %>%
-              rename_all(tolower) %>%
-              dplyr::rename(id = "subject") %>%
-             # dplyr::mutate(pol = "co") %>%
-              pivot_longer(cols = -c("id", "month", "day", "year"),
-                           names_to = "lag", values_to = "co")
+co_yrprior <- read_xlsx(path = year_prior, sheet = 2) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "co")
 
 # ozone
-o3_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
-                              sheet = 3) %>%
-              rename_all(tolower) %>%
-              dplyr::rename(id = "subject") %>%
-              pivot_longer(cols = -c("id", "month", "day", "year"),
-                           names_to = "lag", values_to = "ozone")
+o3_yrprior <- read_xlsx(path = year_prior, sheet = 3) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "ozone")
 
 #PM10
-pm10_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
-                              sheet = 4) %>%
-              rename_all(tolower) %>%
-              dplyr::rename(id = "subject") %>%
-              pivot_longer(cols = -c("id", "month", "day", "year"),
-                           names_to = "lag", values_to = "pm10")
+pm10_yrprior <- read_xlsx(path = year_prior, sheet = 4) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "pm10")
 
 
 #PM25
-pm25_yrprior <- read_xlsx("../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx",
-                              sheet = 5) %>%
-              rename_all(tolower) %>%
-              dplyr::rename(id = "subject") %>%
-              pivot_longer(cols = -c("id", "month", "day", "year"),
-                           names_to = "lag", values_to = "pm25")
+pm25_yrprior <- read_xlsx(path = year_prior, sheet = 5) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "pm25")
 
 #combine
 
@@ -142,43 +176,98 @@ exposures_yrprior <- co_yrprior %>%
   left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
   left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
   left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
-                    pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
-                                 names_to = "pollutant", values_to = "val") %>%
+  pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
+               names_to = "pollutant", values_to = "val") %>%
   rename(metric = "lag") %>%
   mutate(date_visit = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
-                                             format = "%F", tz = "US/Pacific"))) %>%
+                                 format = "%F", tz = "US/Pacific")),
+         pollutant = as.factor(pollutant),
+         metric = as.factor(metric)) %>%
   select(-year, -month, -day)
 
 # split to 30-day daily lag data vs averaged over different time periods data
 
 exposures_30daylags <- exposures_yrprior %>%
-                      filter(grepl("lag", metric))
+  filter(grepl("lag", metric))
 
 exposures_avg_12months <- exposures_yrprior %>%
-                      filter(grepl("before", metric))
+  filter(grepl("before", metric))
 ```
 
-#lifetime exposures to air pollution, PAHs
+## Column names and types - daily, 30-day lag:
 
 ```{r}
-path <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
+str(exposures_30daylags)
+```
 
-pah_lifetime <- read_xlsx(path = path,
-                          sheet = 2) %>%
+## Example data - daily, 30-day lag: 
+
+```{r}
+kable(head(exposures_30daylags))
+```
+
+## Column names and types - 3, 6, and 12-month prior averages
+
+```{r}
+str(exposures_avg_12months)
+```
+
+## Example data - 3, 6, and 12-month prior averages: 
+
+```{r}
+kable(head(exposures_avg_12months))
+```
+
+# Lifetime exposures to air pollutants and PAHs
+
+```{r}
+#PAH, EC, NO2, NOx
+
+lifetime <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
+
+exposures_lifetime <- read_xlsx(path = lifetime, sheet = 2) %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year) %>%
-  mutate(type = if_else(type == "0", "single", type)) %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
   pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type"),
                names_to = "pollutant",
                values_to = "val") %>%
-  mutate(metric = gsub("(meanmonth).*", "\\1", pollutant),
-         pollutant = gsub("^meanmonth(.*)", "\\1", pollutant)) %>%
+  mutate(metric = as.factor(gsub("(meanmonth).*", "\\1", pollutant)),
+         pollutant = as.factor(gsub("^meanmonth(.*)", "\\1", pollutant))) %>%
   rename(date_visit = "vis_date")
-  
+
+#CO, PM25, PM10, O3
+
+lifetime2 <- "../C7_Lifetime_Exposures/C7life_CO_O3_PM_Exposures_2005-2017_11Mar2019woLLV2_noid.xlsx"
+
+exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         ) %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  mutate(metric = as.factor(gsub("(meanmonth).*", "\\1", pollutant)),
+         pollutant = as.factor(gsub("^meanmonth(.*)", "\\1", pollutant))) %>%
+  rename(date_visit = "vis_date")
+
+
 ```
 
+## Column names and types:
 
+```{r}
+str(exposures_lifetime)
+```
+
+## Example data: 
+
+```{r}
+kable(head(exposures_lifetime))
+```
 
 # Save .RDS files
 
@@ -189,7 +278,7 @@ write_rds(pre_lf_long, "output_files/pre_bronchodilator_lf.rds")
 write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
 write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
 write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
-write_rds(pah_lifetime, "output_files/exposures_pah_lifetime.rds")
+write_rds(exposures_lifetime, "output_files/exposures_lifetime.rds")
 ```
 
 
