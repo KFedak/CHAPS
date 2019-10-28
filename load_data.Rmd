@@ -157,17 +157,20 @@ exposures_avg_12months <- exposures_yrprior %>%
 #lifetime exposures to air pollution, PAHs
 
 ```{r}
-pah_lifetime <- read_xlsx("../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx",
-                              sheet = 2) %>%
-              rename_all(tolower) %>%
-              rename("exposure_month" = month,
-                     "exposure_year" = year) %>%
-              mutate(grep(ifelse(type == "0", "single", type))
+path <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
 
-unique(pah_lifetime$type)
-%>%
-              pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month"),
-                           names_to = "pollutant", values_to = "val")
+pah_lifetime <- read_xlsx(path = path,
+                          sheet = 2) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year) %>%
+  mutate(type = if_else(type == "0", "single", type)) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  mutate(metric = gsub("(meanmonth).*", "\\1", pollutant),
+         pollutant = gsub("^meanmonth(.*)", "\\1", pollutant)) %>%
+  rename(date_vis = "vis_date")
   
 ```
 
@@ -182,6 +185,8 @@ write_rds(pre_lf_long, "output_files/pre_bronchodilator_lf.rds")
 write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
 write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
 write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
+write_rds(pah_lifetime, "output_files/exposures_pah_lifetime.rds")
+
 ```
 
 
