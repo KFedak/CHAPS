@@ -145,7 +145,7 @@ exposures_yrprior <- co_yrprior %>%
                     pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
                                  names_to = "pollutant", values_to = "val") %>%
   rename(metric = "lag") %>%
-  mutate(date_exposure = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
+  mutate(date_visit = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
                                              format = "%F", tz = "US/Pacific"))) %>%
   select(-year, -month, -day)
 
@@ -174,7 +174,7 @@ pah_lifetime <- read_xlsx(path = path,
                values_to = "val") %>%
   mutate(metric = gsub("(meanmonth).*", "\\1", pollutant),
          pollutant = gsub("^meanmonth(.*)", "\\1", pollutant)) %>%
-  rename(date_vis = "vis_date")
+  rename(date_visit = "vis_date")
   
 ```
 
