@@ -225,9 +225,9 @@ kable(head(exposures_avg_12months))
 ```{r}
 #PAH, EC, NO2, NOx
 
-lifetime <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
+lifetime1 <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
 
-exposures_lifetime <- read_xlsx(path = lifetime, sheet = 2) %>%
+exposures_lifetime1 <- read_xlsx(path = lifetime1, sheet = 2) %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year) %>%
@@ -297,13 +297,21 @@ exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4) %>%
 ```
 
 * combine data for all pollutants
+
 ```{r}
-exposures_lifetime_ <- exposures_lifetime %>%
-  left_join(exposures_lifetime_co, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
-  left_join(exposures_lifetime_o3, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
-  left_join(exposures_lifetime_pm25, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val")) %>%
-  left_join(exposures_lifetime_pm10, by = c("id", "date_visit", "exposure_year", "exposure_month", "type", "pollutant", "val"))
-  
+exposures_lifetime <- exposures_lifetime1 %>%
+  bind_rows(exposures_lifetime_co %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_pm25 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_pm10 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_o3 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth"))
 ```
 
 
@@ -319,6 +327,29 @@ str(exposures_lifetime)
 kable(head(exposures_lifetime))
 ```
 
+* station information
+
+```{r}
+station_distances <- exposures_lifetime_co %>%
+  select(id, exposure_year, exposure_month, station_distance_co, station_number_co, pollutant) %>%
+  rename(distance = "station_distance_co", station_number = "station_number_co") %>%
+  bind_rows(exposures_lifetime_pm25 %>%
+            select(id, exposure_year, exposure_month, station_distance_pm25, station_number_pm25, pollutant) %>%
+            rename(distance = "station_distance_pm25", station_number = "station_number_pm25")) %>%
+  bind_rows(exposures_lifetime_o3 %>%
+            select(id, exposure_year, exposure_month, station_distance_o3, station_number_o3, pollutant) %>%
+            rename(distance = "station_distance_o3", station_number = "station_number_o3")) %>%
+  bind_rows(exposures_lifetime_pm10 %>%
+            select(id, exposure_year, exposure_month, station_distance_pm10, station_number_pm10, pollutant) %>%
+            rename(distance = "station_distance_pm10", station_number = "station_number_pm10"))
+```
+
+## Example data:
+
+```{r}
+kable(head(station_distances))
+```
+
 # Save .RDS files
 
 ```{r}
@@ -329,6 +360,8 @@ write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
 write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
 write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
 write_rds(exposures_lifetime, "output_files/exposures_lifetime.rds")
+write_rds(station_distances, "output_files/station_distances.rds")
 ```
+
 
 
