@@ -1,0 +1,19 @@
+---
+title: "Descriptives and Exploratory Analysis"
+author: "Kristen Fedak"
+date: "10/29/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+```
+
+#  Participant info
+```{r}
+participants <- read_rds("output_files/participants.rds")
+```
+
