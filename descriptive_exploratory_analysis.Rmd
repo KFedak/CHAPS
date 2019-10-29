@@ -10,9 +10,10 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 library(tidyverse)
 library(readxl)
 library(knitr)
+library(kableExtra)
 ```
 
-#  Participant info
+# Participant info
 
 ```{r}
 participants <- read_rds("output_files/participants.rds") %>%
@@ -20,27 +21,29 @@ participants <- read_rds("output_files/participants.rds") %>%
 ```
 
 ```{r}
-table_data <- participants %>%
-  select(age_months, bmi_pct, height, weight, age_years) %>%
-  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
-  group_by(var) %>%
-  summarise(mean = mean(val, na.rm = TRUE),
-            n = n(),
-            sd = sd (val, na.rm = TRUE),
-            min = min(val, na.rm = TRUE),
-            max = max(val, na.rm = TRUE))
-```
-
-```{r}
 table_data_sex <- participants %>%
   select(age_months, bmi_pct, height, weight, age_years, sex) %>%
   pivot_longer(cols = -sex, names_to = "var", values_to = "val") %>%
   group_by(var, sex) %>%
-  summarise(mean = mean(val, na.rm = TRUE),
+  summarise(mean = round(mean(val, na.rm = TRUE), 2),
             n = n(),
-            sd = sd (val, na.rm = TRUE),
-            min = min(val, na.rm = TRUE),
-            max = max(val, na.rm = TRUE))
+            sd = round(sd(val, na.rm = TRUE), 2),
+            min = round(min(val, na.rm = TRUE), 2),
+            max = round(max(val, na.rm = TRUE), 2))
+
+table_data_total <- participants %>%
+  select(age_months, bmi_pct, height, weight, age_years) %>%
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(mean = round(mean(val, na.rm = TRUE), 2),
+            n = n(),
+            sd = round(sd(val, na.rm = TRUE), 2),
+            min = round(min(val, na.rm = TRUE), 2),
+            max = round(max(val, na.rm = TRUE), 2)) %>%
+  mutate(sex = "total") %>%
+  bind_rows(table_data_sex) %>%
+  arrange(var) %>%
+  select(var, sex, n, mean, sd, min, max)
 ```
 
 ```{r}
@@ -49,5 +52,13 @@ table_data_cat <- participants %>%
   pivot_longer(cols = everything(), names_to = "cat", values_to = "val") %>%
   group_by(cat, val) %>%
   count()
+```
+
+### Participant age, height, weight, and BMI percentage
+
+* by gender
+
+```{r}
+kable(table_data_total, digits = 0) %>% kable_styling(bootstrap_options = c("striped"))
 ```
 
