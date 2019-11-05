@@ -124,11 +124,12 @@ average_lf <- lf_pre %>%
   filter(trial_n == 1) %>%
   mutate(var = as.factor(var)) %>%
   filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  filter(accept == "yes" | accept == "no") %>%
   group_by(test, accept, var) %>%
-  summarize(mean_val = mean(value, na.rm = TRUE),
-            sd_val = sd(value, na.rm = TRUE),
-            min_val = min(value, na.rm = TRUE),
-            max_val = max(value, na.rm = TRUE)) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
   arrange(desc(test), desc(accept))
 ```
 
@@ -138,3 +139,6 @@ kable(average_lf, digits = 1) %>%
   row_spec(row = 0, font_size = 14, bold = T) %>%
   collapse_rows(columns = 1:2, valign = "top")
 ```
+
+
+
