@@ -1,0 +1,365 @@
+---
+title: "load data"
+author: "Kristen Fedak"
+date: "10/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+```
+
+#  Participant info
+
+*  from "c7baseln_n299_apr2018update" dataset
+
+```{r}
+bsln_n299 <- read_csv("../c7baseln_n299_apr2018update.csv",
+  na = (c(".N", "N", "NA")),
+  col_types = cols(.default = "c")) %>%
+  rename_all(tolower)
+```
+
+* create participant data; select variables of interest from list of over 700.
+
+```{r}
+participants <- bsln_n299 %>%
+  dplyr::select(id, agemon,
+                bmi_cat, bmipct, bmi, bmipct95, bmidif95,
+                height, weight, gender, age,
+                race_cat,
+                livew_smok, smokw_child,
+                vis_month,
+                c7hhb_8, c7sm_2) %>%
+  dplyr::rename(age_months = "agemon",
+                age_years = "age",
+                sex = "gender",
+                asthma_ever = "c7hhb_8",
+                bmi_pct = "bmipct",
+                visit_month = "vis_month",
+                smoke_live = "livew_smok", #live with a smoker
+                smoke_around = "smokw_child", #people smoke around child in home or car
+                smoke_current = "c7sm_2") %>% #current smoker 
+  dplyr::mutate(id = as.factor(id),
+                bmi_cat = as.factor(bmi_cat),
+                sex = as.factor(sex),
+                race_cat = as.factor(race_cat),
+                smoke_live = as.factor(smoke_live),
+                smoke_around = as.factor(smoke_around),
+                smoke_current = as.factor(smoke_current),
+                asthma_ever = as.factor(asthma_ever),
+                visit_month = as.factor(visit_month), 
+                age_months = as.numeric(age_months),
+                bmi = as.numeric(bmi),
+                bmi_pct = as.numeric(bmi_pct),
+                bmipct95 = as.numeric(bmipct95),
+                bmidif95 = as.numeric(bmidif95),
+                height = as.numeric(height),
+                weight = as.numeric(weight),
+                age_years = as.numeric(age_years))
+
+```
+
+## Column names and types:
+
+```{r}
+str(participants)
+```
+
+## Example data: 
+
+```{r}
+kable(head(participants))
+```
+
+# Lung function test data
+
+* from "c7baseln_n299_apr2018update" dataset
+* create lung function data (all, pre-bronchodilator, post-bronchodilator)
+
+```{r}
+#all lung function data
+lung_function <- bsln_n299 %>%
+  dplyr::select(id, 623:734)
+
+#pre-bronchodilator test
+pre_lf <- lung_function %>%
+  dplyr::select(id, contains("Pre"))
+
+#post-bronchodilator test
+post_lf <- lung_function %>%
+  dplyr::select(id, contains("Post"))
+```
+
+* turn lung function data into long format
+
+```{r}
+pre_lf_long <- pre_lf %>%
+  dplyr::rename(fev1fvc_pre1 = "pre_fev1fvc") %>%
+  pivot_longer(cols = -c("id", "qcgrade_pre", "preacc", "numpretrials"),
+               names_to =  "var", values_to = "value") %>%
+               mutate(trial_n = var) %>%
+               mutate(trial_n = as.numeric(gsub("^.*_pre", "", trial_n)),
+                      var = gsub("(.*)_.*", "\\1", var),
+                      value = as.numeric(value))
+
+post_lf_long <- post_lf %>%
+  dplyr::rename(fev1fvc_post1 = "post_fev1fvc") %>%
+  pivot_longer(cols = -c("id", "qcgrade_post", "postacc", "numposttrials"),
+               names_to =  "var", values_to = "value") %>%
+               mutate(trial_n = var) %>%
+               mutate(trial_n = as.numeric(gsub("^.*_post", "", trial_n)),
+                      var = gsub("(.*)_.*", "\\1", var),
+                      value = as.numeric(value))
+```
+
+## Column names and types:
+
+```{r}
+str(pre_lf_long)
+```
+
+## Example data:
+
+* pre-bronchodilator test
+```{r}
+kable(head(pre_lf_long))
+```
+
+* post-bronchodilator test
+```{r}
+kable(head(post_lf_long))
+```
+
+# Air Pollution Exposure Metrics
+
+* daily for 30-day prior and averaged 3, 6, and 12-month prior, from the data in the "Yearprior_Exposure" folder
+
+```{r}
+
+year_prior <- "../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx"
+# CO
+co_yrprior <- read_xlsx(path = year_prior, sheet = 2) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "co")
+
+# ozone
+o3_yrprior <- read_xlsx(path = year_prior, sheet = 3) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "ozone")
+
+#PM10
+pm10_yrprior <- read_xlsx(path = year_prior, sheet = 4) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "pm10")
+
+
+#PM25
+pm25_yrprior <- read_xlsx(path = year_prior, sheet = 5) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(id = "subject") %>%
+  pivot_longer(cols = -c("id", "month", "day", "year"),
+  names_to = "lag", values_to = "pm25")
+
+#combine
+
+exposures_yrprior <- co_yrprior %>%
+  left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
+  pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
+               names_to = "pollutant", values_to = "val") %>%
+  rename(metric = "lag") %>%
+  mutate(date_visit = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
+                                 format = "%F", tz = "US/Pacific")),
+         pollutant = as.factor(pollutant),
+         metric = as.factor(metric)) %>%
+  select(-year, -month, -day)
+
+# split to 30-day daily lag data vs averaged over different time periods data
+
+exposures_30daylags <- exposures_yrprior %>%
+  filter(grepl("lag", metric))
+
+exposures_avg_12months <- exposures_yrprior %>%
+  filter(grepl("before", metric))
+```
+
+## Column names and types - daily, 30-day lag:
+
+```{r}
+str(exposures_30daylags)
+```
+
+## Example data - daily, 30-day lag: 
+
+```{r}
+kable(head(exposures_30daylags))
+```
+
+## Column names and types - 3, 6, and 12-month prior averages:
+
+```{r}
+str(exposures_avg_12months)
+```
+
+## Example data - 3, 6, and 12-month prior averages: 
+
+```{r}
+kable(head(exposures_avg_12months))
+```
+
+# Lifetime exposures to air pollutants and PAHs
+
+*load each pollutant (PAH, EC, NO2, and NOx on one file in single tab; CO, PM2.5, PM10, and O3 on second file in seperate tabs)
+
+```{r}
+#PAH, EC, NO2, NOx
+
+lifetime1 <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
+
+exposures_lifetime1 <- read_xlsx(path = lifetime1, sheet = 2) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year) %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  mutate(metric = as.factor(gsub("(meanmonth).*", "\\1", pollutant)),
+         pollutant = as.factor(gsub("^meanmonth(.*)", "\\1", pollutant))) %>%
+  rename(date_visit = "vis_date")
+
+#CO, PM25, PM10, O3
+
+lifetime2 <- "../C7_Lifetime_Exposures/C7life_CO_O3_PM_Exposures_2005-2017_11Mar2019woLLV2_noid.xlsx"
+
+exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "co" = 'co-monthly average 8-hr daily max concentration (ppm) -avg',
+         "station_distance_co" = 'co-dist-1',
+         "station_number_co" = 'co-nst-1') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_co", "station_number_co"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
+
+exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "pm25" = 'pm25-monthly average 24-hr concentration (ug/m3) -avg',
+         "station_distance_pm25" = 'pm25-dist-1',
+         "station_number_pm25" = 'pm25-nst-1') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_pm25", "station_number_pm25"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
+
+exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "pm10" = 'pm10-monthly average 24-hr concentration (ug/m3) -avg',
+         "station_distance_pm10" = 'pm10-dist-1',
+         "station_number_pm10" = 'pm10-nst-1') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_pm10", "station_number_pm10"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
+
+exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4) %>%
+  rename_all(tolower) %>%
+  rename("exposure_month" = month,
+         "exposure_year" = year,
+         "o3" = 'o3-monthly average of daily maximum 8-hr average  concentration (ppb) -avg',
+         "station_distance_o3" = 'o3-dist-2',
+         "station_number_o3" = 'o3-nst-2') %>%
+  mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
+  pivot_longer(cols = -c("id", "vis_date", "exposure_year", "exposure_month", "type", "station_distance_o3", "station_number_o3"),
+               names_to = "pollutant",
+               values_to = "val") %>%
+  rename(date_visit = "vis_date")
+```
+
+* combine data for all pollutants
+
+```{r}
+exposures_lifetime <- exposures_lifetime1 %>%
+  bind_rows(exposures_lifetime_co %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_pm25 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_pm10 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth")) %>%
+  bind_rows(exposures_lifetime_o3 %>%
+            select(id, date_visit, exposure_year, exposure_month, type, pollutant, val) %>%
+            mutate(metric = "meanmonth"))
+```
+
+
+## Column names and types:
+
+```{r}
+str(exposures_lifetime)
+```
+
+## Example data: 
+
+```{r}
+kable(head(exposures_lifetime))
+```
+
+* station information
+
+```{r}
+station_distances <- exposures_lifetime_co %>%
+  select(id, exposure_year, exposure_month, station_distance_co, station_number_co, pollutant) %>%
+  rename(distance = "station_distance_co", station_number = "station_number_co") %>%
+  bind_rows(exposures_lifetime_pm25 %>%
+            select(id, exposure_year, exposure_month, station_distance_pm25, station_number_pm25, pollutant) %>%
+            rename(distance = "station_distance_pm25", station_number = "station_number_pm25")) %>%
+  bind_rows(exposures_lifetime_o3 %>%
+            select(id, exposure_year, exposure_month, station_distance_o3, station_number_o3, pollutant) %>%
+            rename(distance = "station_distance_o3", station_number = "station_number_o3")) %>%
+  bind_rows(exposures_lifetime_pm10 %>%
+            select(id, exposure_year, exposure_month, station_distance_pm10, station_number_pm10, pollutant) %>%
+            rename(distance = "station_distance_pm10", station_number = "station_number_pm10"))
+```
+
+## Example data:
+
+```{r}
+kable(head(station_distances))
+```
+
+# Save .RDS files
+
+```{r, echo= TRUE}
+write_rds(participants, "output_files/participants.rds")
+write_rds(lung_function, "output_files/lungfunction_all.rds")
+write_rds(pre_lf_long, "output_files/pre_bronchodilator_lf.rds")
+write_rds(post_lf_long, "output_files/post_bronchodilator_lf.rds")
+write_rds(exposures_30daylags, "output_files/exposures_30day_lags.rds")
+write_rds(exposures_avg_12months, "output_files/exposures_avg_12months.rds")
+write_rds(exposures_lifetime, "output_files/exposures_lifetime.rds")
+write_rds(station_distances, "output_files/station_distances.rds")
+```
+
