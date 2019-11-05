@@ -37,10 +37,14 @@ participants <- bsln_n299 %>%
                 c7hhb_8, c7sm_2) %>%
   dplyr::rename(age_months = "agemon",
                 age_years = "age",
+                height_cm = "height",
+                weight_kg = "weight",
                 sex = "gender",
                 asthma_ever = "c7hhb_8",
                 bmi_pct = "bmipct",
-                visit_month = "vis_month",
+                bmi_pct95 = "bmipct95",
+                bmi_dif95 = "bmidif95",
+                visit_month = "vis_month", #month of PFT
                 smoke_live = "livew_smok", #live with a smoker
                 smoke_around = "smokw_child", #people smoke around child in home or car
                 smoke_current = "c7sm_2") %>% #current smoker 
@@ -56,10 +60,10 @@ participants <- bsln_n299 %>%
                 age_months = as.numeric(age_months),
                 bmi = as.numeric(bmi),
                 bmi_pct = as.numeric(bmi_pct),
-                bmipct95 = as.numeric(bmipct95),
-                bmidif95 = as.numeric(bmidif95),
-                height = as.numeric(height),
-                weight = as.numeric(weight),
+                bmi_pct95 = as.numeric(bmi_pct95),
+                bmi_dif95 = as.numeric(bmi_dif95),
+                height_cm = as.numeric(height_cm),
+                weight_kg = as.numeric(weight_kg),
                 age_years = as.numeric(age_years))
 
 ```
@@ -143,33 +147,33 @@ kable(head(post_lf_long), digits = 2) %>% kable_styling(bootstrap_options = c("s
 
 year_prior <- "../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx"
 # CO
-co_yrprior <- read_xlsx(path = year_prior, sheet = 2) %>%
+co_yrprior <- read_xlsx(path = year_prior, sheet = 2, na = "-99") %>%
   rename_all(tolower) %>%
   dplyr::rename(id = "subject") %>%
   pivot_longer(cols = -c("id", "month", "day", "year"),
-  names_to = "lag", values_to = "co")
+  names_to = "lag", values_to = "co_ppm")
 
 # ozone
-o3_yrprior <- read_xlsx(path = year_prior, sheet = 3) %>%
+o3_yrprior <- read_xlsx(path = year_prior, sheet = 3, na = "-99") %>%
   rename_all(tolower) %>%
   dplyr::rename(id = "subject") %>%
   pivot_longer(cols = -c("id", "month", "day", "year"),
-  names_to = "lag", values_to = "ozone")
+  names_to = "lag", values_to = "ozone_ppb")
 
 #PM10
-pm10_yrprior <- read_xlsx(path = year_prior, sheet = 4) %>%
+pm10_yrprior <- read_xlsx(path = year_prior, sheet = 4, na = "-99") %>%
   rename_all(tolower) %>%
   dplyr::rename(id = "subject") %>%
   pivot_longer(cols = -c("id", "month", "day", "year"),
-  names_to = "lag", values_to = "pm10")
+  names_to = "lag", values_to = "pm10_ugm3")
 
 
 #PM25
-pm25_yrprior <- read_xlsx(path = year_prior, sheet = 5) %>%
+pm25_yrprior <- read_xlsx(path = year_prior, sheet = 5, na = "-99") %>%
   rename_all(tolower) %>%
   dplyr::rename(id = "subject") %>%
   pivot_longer(cols = -c("id", "month", "day", "year"),
-  names_to = "lag", values_to = "pm25")
+  names_to = "lag", values_to = "pm25_ugm3")
 
 #combine
 
@@ -177,7 +181,7 @@ exposures_yrprior <- co_yrprior %>%
   left_join(o3_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
   left_join(pm10_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
   left_join(pm25_yrprior, by = c("id", "month", "day", "year", "lag")) %>%
-  pivot_longer(cols = c("co", "ozone", "pm10", "pm25"), 
+  pivot_longer(cols = c("co_ppm", "ozone_ppb", "pm10_ugm3", "pm25_ugm3"), 
                names_to = "pollutant", values_to = "val") %>%
   rename(metric = "lag") %>%
   mutate(date_visit = as.POSIXct(strptime(paste(year, month, day, sep = "-"),
@@ -250,7 +254,7 @@ exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
-         "co" = 'co-monthly average 8-hr daily max concentration (ppm) -avg',
+         "co_ppm" = 'co-monthly average 8-hr daily max concentration (ppm) -avg',
          "station_distance_co" = 'co-dist-1',
          "station_number_co" = 'co-nst-1') %>%
   mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
@@ -263,7 +267,7 @@ exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2, na = "-99") %>
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
-         "pm25" = 'pm25-monthly average 24-hr concentration (ug/m3) -avg',
+         "pm25_ugm3" = 'pm25-monthly average 24-hr concentration (ug/m3) -avg',
          "station_distance_pm25" = 'pm25-dist-1',
          "station_number_pm25" = 'pm25-nst-1') %>%
   mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
@@ -276,7 +280,7 @@ exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3, na = "-99") %>
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
-         "pm10" = 'pm10-monthly average 24-hr concentration (ug/m3) -avg',
+         "pm10_ugm3" = 'pm10-monthly average 24-hr concentration (ug/m3) -avg',
          "station_distance_pm10" = 'pm10-dist-1',
          "station_number_pm10" = 'pm10-nst-1') %>%
   mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
@@ -289,7 +293,7 @@ exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
-         "o3" = 'o3-monthly average of daily maximum 8-hr average  concentration (ppb) -avg',
+         "ozone_ppb" = 'o3-monthly average of daily maximum 8-hr average  concentration (ppb) -avg',
          "station_distance_o3" = 'o3-dist-2',
          "station_number_o3" = 'o3-nst-2') %>%
   mutate(type = as.factor(if_else(type == "0", "single", type))) %>%
