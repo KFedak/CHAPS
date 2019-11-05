@@ -51,7 +51,8 @@ table_data_cat <- participants %>%
   select(sex, bmi_cat, race_cat, smoke_live, smoke_around, smoke_current, asthma_ever) %>%
   pivot_longer(cols = everything(), names_to = "cat", values_to = "val") %>%
   group_by(cat, val) %>%
-  count()
+  count() %>%
+  mutate(percent = ((n/299)*100))
 ```
 
 ### Participant age, height, weight, and BMI percentage
@@ -59,13 +60,18 @@ table_data_cat <- participants %>%
 * by gender
 
 ```{r}
-kable(table_data_total, digits = 0) %>% kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
+kable(table_data_total, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = seq(1,15,3), bold = T) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
 ```
 
-### Participant age, height, weight, and BMI percentage
-
-* by gender
+### Participant asthma, BMI category, race/ethnicity, gender, and smoking status
 
 ```{r}
-kable(table_data_total, digits = 0) %>% kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
+kable(table_data_cat, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
 ```
