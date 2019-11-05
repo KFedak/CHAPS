@@ -75,3 +75,42 @@ kable(table_data_cat, digits = 0) %>%
   row_spec(row = 0, font_size = 14, bold = T) %>%
   collapse_rows(columns = 1, valign = "middle")
 ```
+
+
+## Lung Function
+
+```{r}
+lf_pre <- read_rds("output_files/pre_bronchodilator_lf.rds") %>%
+  mutate_if(is.character, tolower) %>%
+  mutate(num_trials = as.numeric(numpretrials),
+         accept = preacc,
+         test = "pre-bronchodilator")
+
+lf_post <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
+  mutate_if(is.character, tolower) %>%
+  mutate(num_trials = as.numeric(numposttrials),
+         accept = postacc,
+         test = "post-bronchodilator")
+```
+
+### Trial Status - number of acceptable trials
+
+```{r}
+trial_status <- lf_pre %>% 
+  bind_rows(lf_post)%>% 
+  filter(var == "fev1", trial_n == 1) %>%
+  group_by(test, accept) %>%
+  summarize(number = n(),
+            avg_n_trials = mean(num_trials)) %>%
+  arrange(desc(test), desc(accept))
+```
+
+```{r}
+kable(trial_status, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+### Average Lung Function, using best trial (trial #1) 
+
