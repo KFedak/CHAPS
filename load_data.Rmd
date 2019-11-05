@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 library(tidyverse)
 library(readxl)
 library(knitr)
+library(kableExtra)
 ```
 
 #  Participant info
@@ -72,7 +73,7 @@ str(participants)
 ## Example data: 
 
 ```{r}
-kable(head(participants))
+kable(head(participants), digits = 1) %>% kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 # Lung function test data
@@ -126,12 +127,12 @@ str(pre_lf_long)
 
 * pre-bronchodilator test
 ```{r}
-kable(head(pre_lf_long))
+kable(head(pre_lf_long), digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 * post-bronchodilator test
 ```{r}
-kable(head(post_lf_long))
+kable(head(post_lf_long), digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 # Air Pollution Exposure Metrics
@@ -203,7 +204,8 @@ str(exposures_30daylags)
 ## Example data - daily, 30-day lag: 
 
 ```{r}
-kable(head(exposures_30daylags))
+kable(head(exposures_30daylags), digits = 2) %>% 
+kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 ## Column names and types - 3, 6, and 12-month prior averages:
@@ -215,19 +217,20 @@ str(exposures_avg_12months)
 ## Example data - 3, 6, and 12-month prior averages: 
 
 ```{r}
-kable(head(exposures_avg_12months))
+kable(head(exposures_avg_12months), digits = 2) %>% 
+kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 # Lifetime exposures to air pollutants and PAHs
 
-*load each pollutant (PAH, EC, NO2, and NOx on one file in single tab; CO, PM2.5, PM10, and O3 on second file in seperate tabs)
+* load each pollutant (PAH, EC, NO2, and NOx on one file in single tab; CO, PM2.5, PM10, and O3 on second file in seperate tabs)
 
 ```{r}
 #PAH, EC, NO2, NOx
 
 lifetime1 <- "../C7_Lifetime_Exposures/PAH_EC_NO2_NOX_C7lifetime exposures_v1_noid.xlsx"
 
-exposures_lifetime1 <- read_xlsx(path = lifetime1, sheet = 2) %>%
+exposures_lifetime1 <- read_xlsx(path = lifetime1, sheet = 2, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year) %>%
@@ -243,7 +246,7 @@ exposures_lifetime1 <- read_xlsx(path = lifetime1, sheet = 2) %>%
 
 lifetime2 <- "../C7_Lifetime_Exposures/C7life_CO_O3_PM_Exposures_2005-2017_11Mar2019woLLV2_noid.xlsx"
 
-exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1) %>%
+exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
@@ -256,7 +259,7 @@ exposures_lifetime_co <- read_xlsx(path = lifetime2, sheet = 1) %>%
                values_to = "val") %>%
   rename(date_visit = "vis_date")
 
-exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2) %>%
+exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
@@ -269,7 +272,7 @@ exposures_lifetime_pm25 <- read_xlsx(path = lifetime2, sheet = 2) %>%
                values_to = "val") %>%
   rename(date_visit = "vis_date")
 
-exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3) %>%
+exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
@@ -282,7 +285,7 @@ exposures_lifetime_pm10 <- read_xlsx(path = lifetime2, sheet = 3) %>%
                values_to = "val") %>%
   rename(date_visit = "vis_date")
 
-exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4) %>%
+exposures_lifetime_o3 <- read_xlsx(path = lifetime2, sheet = 4, na = "-99") %>%
   rename_all(tolower) %>%
   rename("exposure_month" = month,
          "exposure_year" = year,
@@ -324,7 +327,8 @@ str(exposures_lifetime)
 ## Example data: 
 
 ```{r}
-kable(head(exposures_lifetime))
+kable(head(exposures_lifetime), digits = 3) %>% 
+kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 * station information
@@ -347,7 +351,8 @@ station_distances <- exposures_lifetime_co %>%
 ## Example data:
 
 ```{r}
-kable(head(station_distances))
+kable(head(station_distances), digits = 1) %>% 
+kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F)
 ```
 
 # Save .RDS files
