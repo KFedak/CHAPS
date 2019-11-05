@@ -116,10 +116,10 @@ kable(trial_status, digits = 1) %>%
 
 ### Average Lung Function
 
-#### using best trial (Trial #1)
+#### using best trial (Trial #1), compare acceptable vs. not
 
 ```{r}
-average_lf <- lf_pre %>% 
+average_lf_best <- lf_pre %>% 
   bind_rows(lf_post) %>%
   filter(trial_n == 1) %>%
   mutate(var = as.factor(var)) %>%
@@ -134,11 +134,32 @@ average_lf <- lf_pre %>%
 ```
 
 ```{r}
-kable(average_lf, digits = 1) %>% 
+kable(average_lf_best, digits = 1) %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
   row_spec(row = 0, font_size = 14, bold = T) %>%
-  collapse_rows(columns = 1:2, valign = "top")
+  collapse_rows(columns = 1:2, valign = "middle")
 ```
 
+#### By trial number, compare all 3 trials
 
+```{r}
+average_lf_all <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  filter(accept == "yes") %>%
+  group_by(test, var, trial_n) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test))
+```
+
+```{r}
+kable(average_lf_all, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
 
