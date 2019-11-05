@@ -20,6 +20,29 @@ participants <- read_rds("output_files/participants.rds") %>%
   mutate_if(is.factor, tolower)
 ```
 
+### Participant asthma, BMI category, race/ethnicity, gender, and smoking status
+
+```{r}
+table_data_cat <- participants %>%
+  select(sex, bmi_cat, race_cat, smoke_live, smoke_around, smoke_current, asthma_ever) %>%
+  pivot_longer(cols = everything(), names_to = "cat", values_to = "val") %>%
+  group_by(cat, val) %>%
+  count() %>%
+  mutate(percent = ((n/299)*100)) %>%
+  arrange(cat, desc(n))
+```
+
+```{r}
+kable(table_data_cat, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+### Participant age, height, weight, and BMI percentage
+
+* by gender
+
 ```{r}
 table_data_sex <- participants %>%
   select(age_months, bmi_pct, height_cm, weight_kg, age_years, sex) %>%
@@ -31,7 +54,7 @@ table_data_sex <- participants %>%
             min = min(val, na.rm = TRUE),
             max = max(val, na.rm = TRUE))
 
-table_data_total <- participants %>%
+table_data_total_gender <- participants %>%
   select(age_months, bmi_pct, height_cm, weight_kg, age_years) %>%
   pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
   group_by(var) %>%
@@ -47,36 +70,49 @@ table_data_total <- participants %>%
 ```
 
 ```{r}
-table_data_cat <- participants %>%
-  select(sex, bmi_cat, race_cat, smoke_live, smoke_around, smoke_current, asthma_ever) %>%
-  pivot_longer(cols = everything(), names_to = "cat", values_to = "val") %>%
-  group_by(cat, val) %>%
-  count() %>%
-  mutate(percent = ((n/299)*100))
-```
-
-### Participant age, height, weight, and BMI percentage
-
-* by gender
-
-```{r}
-kable(table_data_total, digits = 0) %>% 
+kable(table_data_total_gender, digits = 0) %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
   row_spec(row = seq(1,15,3), bold = T) %>%
   row_spec(row = 0, font_size = 14, bold = T) %>%
   collapse_rows(columns = 1, valign = "middle")
 ```
 
-### Participant asthma, BMI category, race/ethnicity, gender, and smoking status
+
+* by race
 
 ```{r}
-kable(table_data_cat, digits = 0) %>% 
-  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
-  row_spec(row = 0, font_size = 14, bold = T) %>%
-  collapse_rows(columns = 1, valign = "middle")
+table_data_race <- participants %>%
+  select(age_months, bmi_pct, height_cm, weight_kg, age_years, race_cat) %>%
+  pivot_longer(cols = -race_cat, names_to = "var", values_to = "val") %>%
+  group_by(var, race_cat) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+table_data_total_race <- participants %>%
+  select(age_months, height_cm, weight_kg, age_years, bmi_pct) %>%
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE)) %>%
+  mutate(race_cat = "total") %>%
+  bind_rows(table_data_race) %>%
+  arrange(var, desc(n)) %>%
+  select(var, race_cat, n, mean, sd, min, max)
 ```
 
-
+```{r}
+kable(table_data_total_race, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%  
+  row_spec(row = seq(1,25,5), bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
 ## Lung Function
 
 ```{r}
@@ -116,6 +152,29 @@ kable(trial_status, digits = 1) %>%
 
 ### Average Lung Function
 
+#### By trial number, compare all 3 trials ("acceptable" only)
+
+```{r}
+average_lf_all <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  filter(accept == "yes") %>%
+  group_by(test, var, trial_n) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test))
+```
+
+```{r}
+kable(average_lf_all, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
 #### using best trial (Trial #1), compare acceptable vs. not
 
 ```{r}
@@ -135,29 +194,6 @@ average_lf_best <- lf_pre %>%
 
 ```{r}
 kable(average_lf_best, digits = 1) %>% 
-  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
-  row_spec(row = 0, font_size = 14, bold = T) %>%
-  collapse_rows(columns = 1:2, valign = "middle")
-```
-
-#### By trial number, compare all 3 trials
-
-```{r}
-average_lf_all <- lf_pre %>% 
-  bind_rows(lf_post) %>%
-  mutate(var = as.factor(var)) %>%
-  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
-  filter(accept == "yes") %>%
-  group_by(test, var, trial_n) %>%
-  summarize(mean = mean(value, na.rm = TRUE),
-            sd = sd(value, na.rm = TRUE),
-            min = min(value, na.rm = TRUE),
-            max = max(value, na.rm = TRUE)) %>%
-  arrange(desc(test))
-```
-
-```{r}
-kable(average_lf_all, digits = 1) %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
   row_spec(row = 0, font_size = 14, bold = T) %>%
   collapse_rows(columns = 1:2, valign = "middle")
