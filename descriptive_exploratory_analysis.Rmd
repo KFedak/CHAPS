@@ -199,3 +199,69 @@ kable(average_lf_best, digits = 1) %>%
   collapse_rows(columns = 1:2, valign = "middle")
 ```
 
+#### Using best trial (trial #1), acceptable only, compare by potential confounders
+```{r}
+average_lf_part <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  filter(trial_n == 1 & accept == "yes") %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  left_join(select(participants, c("id", "sex", "bmi_cat", "race_cat" )), by = "id")
+```
+
+* Gender
+
+```{r}
+average_lf_sex <- average_lf_part %>%
+  group_by(test, var, sex) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_sex, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+* BMI
+
+```{r}
+average_lf_bmi <- average_lf_part %>%
+  group_by(test, var, bmi_cat) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_bmi, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+* Race
+
+```{r}
+average_lf_race <- average_lf_part %>%
+  group_by(test, var, race_cat) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_race, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
