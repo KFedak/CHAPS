@@ -12,3 +12,28 @@ library(readxl)
 library(knitr)
 library(kableExtra)
 ```
+
+# 30 Day Lag Exposures
+
+```{r}
+lags <- read_rds("output_files/exposures_30day_lags.rds")
+```
+
+```{r}
+lag_summary <- lags %>%
+  group_by(pollutant, metric) %>%
+  summarise(average = mean(val, na.rm = TRUE))
+```
+
+```{r}
+ggplot(lag_summary, aes(x = metric, y = average, group = pollutant, color =pollutant)) +
+  geom_line() + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_sqrt()
+```
+
+```{r}
+
+```
+
