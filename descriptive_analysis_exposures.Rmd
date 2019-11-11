@@ -15,8 +15,22 @@ library(kableExtra)
 
 # 30 Day Lag Exposures
 
+## Daily pollutant averages for each of the 30 days prior to the study date (averaged for all participants)
+
 ```{r}
 lags <- read_rds("output_files/exposures_30day_lags.rds")
+```
+
+```{r}
+lag_summary_table <- lags %>%
+  group_by(pollutant) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(lag_summary_table, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) 
 ```
 
 ```{r}
@@ -27,13 +41,30 @@ lag_summary <- lags %>%
 
 ```{r}
 ggplot(lag_summary, aes(x = metric, y = average, group = pollutant, color =pollutant)) +
-  geom_line() + 
+  geom_point() + 
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_y_sqrt()
 ```
 
-```{r}
+# 1 week, 1 month, 3 month, 6 month, 12 month
 
+```{r}
+exposures_12months <- read_rds("output_files/exposures_avg_12months.rds")
 ```
+
+```{r}
+month_summary_table <- exposures_12months %>%
+  group_by(pollutant, metric) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(month_summary_table, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+
 
