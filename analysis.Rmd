@@ -1,0 +1,42 @@
+---
+title: "Analysis"
+author: "Kristen Fedak"
+date: "11/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+```
+
+```{r}
+participants <- read_rds("output_files/participants.rds") %>%
+  mutate_if(is.factor, tolower)
+
+lf_pre_trial1 <- read_rds("output_files/pre_bronchodilator_lf.rds") %>%
+  dplyr::mutate_if(is.character, tolower) %>%
+  dplyr::filter(preacc == "yes" & trial_n == 1) %>%
+  dplyr::mutate(num_trials = as.numeric(numpretrials),
+         test = "pre_bronchodilator") %>%
+  dplyr:: select(-numpretrials, -preacc)
+
+
+lf_post_trial1 <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
+  dplyr::mutate_if(is.character, tolower) %>%
+  dplyr::filter(postacc == "yes" & trial_n == 1) %>%
+  dplyr::mutate(num_trials = as.numeric(numposttrials),
+         test = "post_bronchodilator") %>%
+  dplyr:: select(-numposttrials, -postacc)
+```
+```
+
+# Lung Function base model
+
+```{r}
+ glm(
+```
+
