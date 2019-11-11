@@ -40,11 +40,11 @@ lag_summary <- lags %>%
 ```
 
 ```{r}
-ggplot(lag_summary, aes(x = metric, y = average, group = pollutant, color =pollutant)) +
-  geom_point() + 
+ggplot(lags, aes(x = metric, y = val, group = metric, color =pollutant)) +
+  geom_boxplot() +
+  facet_wrap(~pollutant, scales = "free_y", ncol = 1) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_y_sqrt()
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 # 1 week, 1 month, 3 month, 6 month, 12 month
@@ -65,6 +65,46 @@ kable(month_summary_table, digits = 2) %>%
   kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
   collapse_rows(columns = 1, valign = "middle")
 ```
+
+# Lifetime
+
+```{r}
+exposures_lifetime <- read_rds("output_files/exposures_lifetime.rds")
+```
+
+* participant lifetime averages
+
+```{r}
+exposures_lifetime_part <- exposures_lifetime %>%
+  group_by(id, pollutant) %>%
+  summarize(val = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  group_by(pollutant) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(exposures_lifetime_part, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+```{r}
+exposures_lifetime_part <- exposures_lifetime %>%
+  group_by(id, pollutant) %>%
+  summarize(val = mean(val, na.rm = TRUE)) 
+```
+
+```{r}
+ggplot(exposures_lifetime_part, aes(x = id, y = val, group = pollutant)) +
+  geom_point() +
+  facet_wrap(~ pollutant, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
 
 
 
