@@ -34,12 +34,6 @@ kable(lag_summary_table, digits = 2) %>%
 ```
 
 ```{r}
-lag_summary <- lags %>%
-  group_by(pollutant, metric) %>%
-  summarise(average = mean(val, na.rm = TRUE))
-```
-
-```{r}
 ggplot(lags, aes(x = metric, y = val, group = metric, color =pollutant)) +
   geom_boxplot() +
   facet_wrap(~pollutant, scales = "free_y", ncol = 1) +
