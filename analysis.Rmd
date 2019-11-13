@@ -11,6 +11,7 @@ library(tidyverse)
 library(readxl)
 library(knitr)
 library(kableExtra)
+library(jtools)
 ```
 
 ```{r}
@@ -32,11 +33,29 @@ lf_post_trial1 <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
          test = "post_bronchodilator") %>%
   dplyr:: select(-numposttrials, -postacc)
 ```
+
+```{r}
+lf_pre_participants <- lf_pre_trial1 %>%
+  left_join(participants, by = "id")
 ```
+
 
 # Lung Function base model
 
+## FVC
 ```{r}
- glm(
+fvc_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants, var == "fvc"))
+
+summary(fvc_mod)
+plot(fvc_mod)
 ```
+
+
+```{r}
+summ(fvc_mod)
+effect_plot(fvc_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+
 
