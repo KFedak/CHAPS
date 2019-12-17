@@ -1,7 +1,7 @@
 ---
 title: "load data"
 author: "Kristen Fedak"
-date: "10/23/2019"
+date: "12/17/2019"
 output: html_document
 ---
 
@@ -195,8 +195,10 @@ exposures_yrprior <- co_yrprior %>%
 exposures_30daylags <- exposures_yrprior %>%
   filter(grepl("lag", metric)) %>%
   mutate(lag_days = as.numeric(gsub("(lag)(.*)", "\\2", metric)),
-         date_exp_measure = as.POSIXct((date_visit - (lag_days*24*60*60)))) #note that some have an issue with daylights savings time - will jump to hr 1:00:00 or 23:00:00... 
+         date_exp_measure = as.POSIXct((date_visit - (lag_days*24*60*60)))) #note that some have an issue with daylights savings time - will jump to hr 1:00:00 or 23:00:00...seems like this is OK though because it's not creating any issues where the lag days are duplicated - each 0-30 is assigned a unique date, 31 in succession. 
 
+exposures_avg_12months <- exposures_yrprior %>%
+  filter(grepl("before", metric))
 ```
 
 ## Column names and types - daily, 30-day lag:
