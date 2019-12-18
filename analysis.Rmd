@@ -1,8 +1,13 @@
 ---
 title: "Analysis"
 author: "Kristen Fedak"
-date: "11/11/2019"
-output: html_document
+date: "11/18/2019"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
 ---
 
 ```{r setup, include=FALSE}
@@ -14,6 +19,7 @@ library(kableExtra)
 library(jtools)
 ```
 
+# Load and create datasets 
 ```{r}
 participants <- read_rds("output_files/participants.rds") %>%
   mutate_if(is.factor, tolower)
@@ -36,11 +42,38 @@ lf_post_trial1 <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
 
 ```{r}
 lf_pre_participants <- lf_pre_trial1 %>%
-  left_join(participants, by = "id")
+  left_join(participants, by = "id") %>%
+  mutate(id = factor(id),
+                bmi_cat = factor(bmi_cat,
+                                    levels = c("normal weight", "overweight", "obese", "underweight")),
+                sex = as.factor(sex),
+                race_cat = factor(race_cat,
+                                     levels = c("hispanic", "white", "african american", "asian or pacific islander")),
+                smoke_live = factor(smoke_live,
+                                        levels = c("no", "yes")),
+                smoke_around = factor(smoke_around,
+                                        levels = c("no", "yes")),
+                smoke_current = factor(smoke_current,
+                                        levels = c("no", "yes")),
+                asthma_ever = factor(asthma_ever,
+                                        levels = c("no", "yes")),
+                visit_month = as.factor(visit_month))
+```
+
+```{r}
+exposures_lifetime_avg <- read_rds("output_files/exposures_lifetime.rds") %>%
+  #select(-exposure_year, -exposure_month, -type, -metric) %>%
+  group_by(id, pollutant) %>%
+  summarize(exp_avg_lifetime = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(id = as.factor(id))
+
+lf_pre_participants_exp <- lf_pre_participants %>%
+  left_join(exposures_lifetime_avg)
 ```
 
 
-# Lung Function base model
+#Lung Function base model (no pollutant exposure considered)
 
 ## FVC
 ```{r}
@@ -51,11 +84,79 @@ summary(fvc_mod)
 plot(fvc_mod)
 ```
 
-
 ```{r}
 summ(fvc_mod)
 effect_plot(fvc_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
 ```
+
+## FEV1
+
+```{r}
+fev_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants, var == "fev1"))
+
+summary(fev_mod)
+plot(fev_mod)
+```
+
+```{r}
+summ(fev_mod)
+effect_plot(fev_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+## FEF25-75
+
+```{r}
+fef2575_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants, var == "fef2575"))
+
+summary(fef2575_mod)
+plot(fef2575_mod)
+```
+
+```{r}
+summ(fef2575_mod)
+effect_plot(fef2575_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+# Model containing lifetime exposure metric
+
+## FVC, PM25
+```{r}
+fvc_lifetime_pm25_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pm25_ugm3"))
+
+summary(fvc_lifetime_pm25_mod)
+plot(fvc_lifetime_pm25_mod)
+```
+## FVC, PM10
+```{r}
+fvc_lifetime_pm10_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pm10_ugm3"))
+
+summary(fvc_lifetime_pm10_mod)
+plot(fvc_lifetime_pm10_mod)
+```
+
+## FVC, no2
+```{r}
+fvc_lifetime_no2_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "no2"))
+
+summary(fvc_lifetime_no2_mod)
+plot(fvc_lifetime_no2_mod)
+```
+
+## FVC, PAHs
+```{r}
+fvc_lifetime_pah_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
+                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pah456"))
+
+summary(fvc_lifetime_pah_mod)
+plot(fvc_lifetime_pah_mod)
+```
+
+
 
 
 
