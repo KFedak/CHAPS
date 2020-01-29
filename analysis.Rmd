@@ -1,7 +1,7 @@
 ---
 title: "Analysis"
 author: "Kristen Fedak"
-date: "11/18/2019"
+date: "12/18/2019"
 output: 
   html_document:
     toc: true
@@ -61,24 +61,46 @@ lf_pre_participants <- lf_pre_trial1 %>%
 ```
 
 ```{r}
-exposures_lifetime_avg <- read_rds("output_files/exposures_lifetime.rds") %>%
+exposures_lifetime <- read_rds("output_files/exposures_lifetime.rds") 
+
+exposures_lifetime_avg <- exposures_lifetime %>%
   #select(-exposure_year, -exposure_month, -type, -metric) %>%
   group_by(id, pollutant) %>%
   summarize(exp_avg_lifetime = mean(val, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(id = as.factor(id))
 
+exposures_lastyear_avg <- exposures_lifetime %>%
+  #select(-exposure_month, -type, -metric) %>%
+  group_by(id, pollutant, exposure_year) %>%
+  summarize(exp_avg_year = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(exposure_year = as.numeric(exposure_year)) %>%
+  group_by(id, pollutant) %>%
+  top_n(1, wt = exposure_year) %>%
+  ungroup() %>%
+  mutate(id = as.factor(id),
+         exp_avg_lastyear = exp_avg_year)
+
+
 lf_pre_participants_exp <- lf_pre_participants %>%
-  left_join(exposures_lifetime_avg)
+  left_join(exposures_lifetime_avg) %>%
+  left_join(select(exposures_lastyear_avg, id, pollutant, exp_avg_lastyear))
 ```
 
+# Source model functions
 
-#Lung Function base model (no pollutant exposure considered)
+```{r, results = 'hide'}
+  source("functions.R")
+```
+
+# Lung function base model (no pollutant exposure considered)
+
+lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
 
 ## FVC
 ```{r}
-fvc_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants, var == "fvc"))
+fvc_mod <- mod_base(filter(lf_pre_participants, var == "fvc"))
 
 summary(fvc_mod)
 plot(fvc_mod)
@@ -92,8 +114,7 @@ effect_plot(fvc_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
 ## FEV1
 
 ```{r}
-fev_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants, var == "fev1"))
+fev_mod <- mod_base(filter(lf_pre_participants, var == "fev1"))
 
 summary(fev_mod)
 plot(fev_mod)
@@ -107,8 +128,7 @@ effect_plot(fev_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
 ## FEF25-75
 
 ```{r}
-fef2575_mod <- lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants, var == "fef2575"))
+fef2575_mod <- mod_base(filter(lf_pre_participants, var == "fef2575"))
 
 summary(fef2575_mod)
 plot(fef2575_mod)
@@ -119,20 +139,25 @@ summ(fef2575_mod)
 effect_plot(fef2575_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
 ```
 
+
 # Model containing lifetime exposure metric
+
+lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
 
 ## FVC, PM25
 ```{r}
-fvc_lifetime_pm25_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pm25_ugm3"))
+fvc_lifetime_pm25_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm25_ugm3"))
 
 summary(fvc_lifetime_pm25_mod)
 plot(fvc_lifetime_pm25_mod)
 ```
 ## FVC, PM10
 ```{r}
-fvc_lifetime_pm10_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pm10_ugm3"))
+fvc_lifetime_pm10_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm10_ugm3"))
 
 summary(fvc_lifetime_pm10_mod)
 plot(fvc_lifetime_pm10_mod)
@@ -140,8 +165,9 @@ plot(fvc_lifetime_pm10_mod)
 
 ## FVC, no2
 ```{r}
-fvc_lifetime_no2_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "no2"))
+fvc_lifetime_no2_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "no2"))
 
 summary(fvc_lifetime_no2_mod)
 plot(fvc_lifetime_no2_mod)
@@ -149,8 +175,9 @@ plot(fvc_lifetime_no2_mod)
 
 ## FVC, PAHs
 ```{r}
-fvc_lifetime_pah_mod <- lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,  
-                        data = filter(lf_pre_participants_exp, var == "fvc" & pollutant == "pah456"))
+fvc_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "pah456"))
 
 summary(fvc_lifetime_pah_mod)
 plot(fvc_lifetime_pah_mod)
@@ -158,5 +185,50 @@ plot(fvc_lifetime_pah_mod)
 
 
 
+# Model containing prior year average exposure metric
+
+lm(value ~ exp_avg_lastyear + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC, PM25
+```{r}
+fvc_lastyear_pm25_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fvc_lastyear_pm25_mod)
+plot(fvc_lastyear_pm25_mod)
+```
+## FVC, PM10
+```{r}
+fvc_lastyear_pm10_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm10_ugm3"))
+
+summary(fvc_lastyear_pm10_mod)
+plot(fvc_lastyear_pm10_mod)
+```
+
+## FVC, no2
+```{r}
+fvc_lastyear_no2_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "no2"))
+
+summary(fvc_lastyear_no2_mod)
+plot(fvc_lastyear_no2_mod)
+```
+
+## FVC, PAHs
+```{r}
+fvc_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "pah456"))
+
+summary(fvc_lastyear_pah_mod)
+plot(fvc_lastyear_pah_mod)
+```
+
+
+# Distributed Lag Models
 
 
