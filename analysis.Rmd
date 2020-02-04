@@ -17,6 +17,8 @@ library(readxl)
 library(knitr)
 library(kableExtra)
 library(jtools)
+library(dlnm)
+library(splines)
 ```
 
 # Load and create datasets 
@@ -83,10 +85,19 @@ exposures_lastyear_avg <- exposures_lifetime %>%
          exp_avg_lastyear = exp_avg_year)
 
 
-lf_pre_participants_exp <- lf_pre_participants %>%
+lf_pre_participants_expavg <- lf_pre_participants %>%
   left_join(exposures_lifetime_avg) %>%
   left_join(select(exposures_lastyear_avg, id, pollutant, exp_avg_lastyear))
 ```
+
+```{r}
+exposures_daily <- read_rds("output_files/exposures_30day_lags.rds") %>%
+  mutate(id = as.factor(id))
+
+lf_pre_participants_expdaily <- lf_pre_participants %>%
+  left_join(exposures_daily, by = "id") 
+```
+
 
 # Source model functions
 
@@ -229,6 +240,11 @@ plot(fvc_lastyear_pah_mod)
 ```
 
 
-# Distributed Lag Models
+# Distributed Lag Models - 30 days prior
 
+
+```{r}
+# step 1 specify the DLMN
+basis.
+```
 
