@@ -270,10 +270,13 @@ pred.pol <- crosspred(basis.pol, model, cen=25) # centering value automatically 
 
 # step 3 represent the dlnm (plot)
 plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
-  ylab="RR",main="Lag-specific effects")
+  #ylab="RR",
+  xlab= "PM2.5",
+  main="Lag-specific effects")
 
 plot(pred.pol, "overall", ci="lines", ylim=c(0,5), lwd=2, col=4,
-  xlab="PM2.5", ylab="RR", main="Overall effect")
+  xlab="PM2.5", ylab="FCV", 
+  main="Overall effect")
 
 plot(pred.pol, xlab="pm2.5", theta=240, phi=40, ltheta=-185,
   zlab="RR", main="3D graph")
