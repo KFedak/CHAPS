@@ -266,7 +266,7 @@ summary(basis.pol)
 ```
 
 ```{r}
-model <- glm(value ~ basis.pol + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever, data = testdlnmdata)
+model <- glm(value ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = testdlnmdata)
 # didn't specify the family object for the glm
 ```
 
@@ -279,7 +279,6 @@ pred.pol <- crosspred(basis.pol, model, cen=0) # centering value automatically s
 # step 3 represent the dlnm (plot)
 
 ```{r}
-
 plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
   #ylab="RR",
   xlab= "PM2.5",
