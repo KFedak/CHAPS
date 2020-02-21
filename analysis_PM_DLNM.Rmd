@@ -1,0 +1,62 @@
+---
+title: "PM DLNM"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(jtools)
+library(dlnm)
+library(splines)
+```
+
+
+# load health+exp datsets needed for modeling
+
+```{r}
+lf_pre_participants_expdaily <- read_rds("output_files/modeling_data_dailyexp.rds") 
+
+lf_pre_participants_expyearlife <- read_rds("output_files/modeling_data_lifetimeexp.rds")
+
+exposures_monthly <- read_rds("output_files/exposures_lifetime.rds") %>%
+  mutate(id = as.factor(id))
+
+lf_pre_participants <- read_rds("output_files/lf_pre_participants.rds")
+
+lf_pre_participants_expmonthly <- select(exposures_monthly, -type, -metric) %>%
+  left_join(select(lf_pre_participants, 
+                   id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
+            by = "id")
+
+```
+
+# Source model functions
+
+```{r, results = 'hide'}
+  source("functions.R")
+```
+
+# limit datasets - choose PAH data only
+
+```{r}
+pm_lf_expdaily <- lf_pre_participants_expdaily %>%
+  mutate(val_lf = value,
+         val_pol = val) %>%
+  select(id, date_visit, var, val_lf, lag_days, date_exp_measure, pollutant, val_pol, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever) %>%
+  mutate(id = as.factor(id),
+         var = as.factor(var)) %>%
+  filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
+  filter(pollutant == "pm25_ugm3")
+
+
+pm_lf_expmonthly <- lf_pre_participants_expmonthly %>%
+  filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
+  filter(pollutant == "pm25_ugm3") %>%
+  mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
+
+```
+
