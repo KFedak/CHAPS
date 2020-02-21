@@ -1,0 +1,117 @@
+---
+title: "Descriptives/Exploratory Analysis on Exposures"
+author: "Kristen Fedak"
+date: "11/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+```
+
+# 30 Day Lag Exposures
+
+## Daily pollutant averages for each of the 30 days prior to the study date (averaged for all participants)
+
+```{r}
+lags <- read_rds("output_files/exposures_30day_lags.rds") %>%
+  mutate(id = as.factor(id))
+```
+
+```{r}
+lag_summary_table <- lags %>%
+  group_by(pollutant) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(lag_summary_table, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) 
+```
+
+# lag day
+
+```{r}
+ggplot(lags, aes(x = metric, y = val, group = metric, color = pollutant)) +
+  geom_boxplot() +
+  facet_wrap(~pollutant, scales = "free_y", ncol = 1) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# time series of lag exposures per participant, based on actual exposure measurement date
+
+```{r fig.width = 11, fig.height = 5}
+ggplot(lags, aes(x = date_exp_measure, y = val, color = id)) +
+  geom_line(aes(group = id)) +
+  facet_wrap(~pollutant, scales = "free", ncol = 1) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+# 1 week, 1 month, 3 month, 6 month, 12 month
+
+```{r}
+exposures_12months <- read_rds("output_files/exposures_avg_12months.rds")
+```
+
+```{r}
+month_summary_table <- exposures_12months %>%
+  group_by(pollutant, metric) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(month_summary_table, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+# Lifetime
+
+```{r}
+exposures_lifetime <- read_rds("output_files/exposures_lifetime.rds")
+```
+
+* participant lifetime averages
+
+```{r}
+exposures_lifetime_part <- exposures_lifetime %>%
+  group_by(id, pollutant) %>%
+  summarize(val = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  group_by(pollutant) %>%
+  summarize(average = mean(val, na.rm = TRUE),
+            stdev = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+kable(exposures_lifetime_part, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+```{r}
+exposures_lifetime_part <- exposures_lifetime %>%
+  group_by(id, pollutant) %>%
+  summarize(val = mean(val, na.rm = TRUE)) 
+```
+
+```{r}
+ggplot(exposures_lifetime_part, aes(x = id, y = val, group = pollutant)) +
+  geom_point() +
+  facet_wrap(~ pollutant, scales = "free_y", ncol = 2) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+

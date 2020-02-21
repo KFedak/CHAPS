@@ -1,0 +1,267 @@
+---
+title: "Descriptives/Exploratory Analysis on Participants and Lung Function"
+author: "Kristen Fedak"
+date: "11/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+```
+
+# Participant info
+
+```{r}
+participants <- read_rds("output_files/participants.rds") %>%
+  mutate_if(is.factor, tolower)
+```
+
+### Participant asthma, BMI category, race/ethnicity, gender, and smoking status
+
+```{r}
+table_data_cat <- participants %>%
+  select(sex, bmi_cat, race_cat, smoke_live, smoke_around, smoke_current, asthma_ever) %>%
+  pivot_longer(cols = everything(), names_to = "cat", values_to = "val") %>%
+  group_by(cat, val) %>%
+  count() %>%
+  mutate(percent = ((n/299)*100)) %>%
+  arrange(cat, desc(n))
+```
+
+```{r}
+kable(table_data_cat, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+### Participant age, height, weight, and BMI percentage
+
+* by gender
+
+```{r}
+table_data_sex <- participants %>%
+  select(age_months, bmi_pct, height_cm, weight_kg, age_years, sex) %>%
+  pivot_longer(cols = -sex, names_to = "var", values_to = "val") %>%
+  group_by(var, sex) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+table_data_total_gender <- participants %>%
+  select(age_months, bmi_pct, height_cm, weight_kg, age_years) %>%
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE)) %>%
+  mutate(sex = "total") %>%
+  bind_rows(table_data_sex) %>%
+  arrange(var, desc(sex)) %>%
+  select(var, sex, n, mean, sd, min, max)
+```
+
+```{r}
+kable(table_data_total_gender, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = seq(1,15,3), bold = T) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+
+* by race
+
+```{r}
+table_data_race <- participants %>%
+  select(age_months, bmi_pct, height_cm, weight_kg, age_years, race_cat) %>%
+  pivot_longer(cols = -race_cat, names_to = "var", values_to = "val") %>%
+  group_by(var, race_cat) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE))
+
+table_data_total_race <- participants %>%
+  select(age_months, height_cm, weight_kg, age_years, bmi_pct) %>%
+  pivot_longer(cols = everything(), names_to = "var", values_to = "val") %>%
+  group_by(var) %>%
+  summarise(mean = mean(val, na.rm = TRUE),
+            n = n(),
+            sd = sd(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE)) %>%
+  mutate(race_cat = "total") %>%
+  bind_rows(table_data_race) %>%
+  arrange(var, desc(n)) %>%
+  select(var, race_cat, n, mean, sd, min, max)
+```
+
+```{r}
+kable(table_data_total_race, digits = 0) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%  
+  row_spec(row = seq(1,25,5), bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+## Lung Function
+
+```{r}
+lf_pre <- read_rds("output_files/pre_bronchodilator_lf.rds") %>%
+  mutate_if(is.character, tolower) %>%
+  mutate(num_trials = as.numeric(numpretrials),
+         accept = preacc,
+         test = "pre-bronchodilator") %>%
+  select(-numpretrials)
+
+lf_post <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
+  mutate_if(is.character, tolower) %>%
+  mutate(num_trials = as.numeric(numposttrials),
+         accept = postacc,
+         test = "post-bronchodilator") %>%
+  select(-numposttrials)
+```
+
+### Trial Status - number of acceptable trials
+
+```{r}
+trial_status <- lf_pre %>% 
+  bind_rows(lf_post) %>% 
+  filter(var == "fev1", trial_n == 1) %>%
+  group_by(test, accept) %>%
+  summarize(number = n(),
+            avg_n_trials = mean(num_trials)) %>%
+  arrange(desc(test), desc(accept))
+```
+
+```{r}
+kable(trial_status, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1, valign = "middle")
+```
+
+### Average Lung Function
+
+#### By trial number, compare all 3 trials ("acceptable" only)
+
+```{r}
+average_lf_all <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  filter(accept == "yes") %>%
+  group_by(test, var, trial_n) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test))
+```
+
+```{r}
+kable(average_lf_all, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+#### using best trial (Trial #1), compare acceptable vs. not
+
+```{r}
+average_lf_best <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  filter(trial_n == 1) %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  filter(accept == "yes" | accept == "no") %>%
+  group_by(test, accept, var) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), desc(accept))
+```
+
+```{r}
+kable(average_lf_best, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+#### Using best trial (trial #1), acceptable only, compare by potential confounders
+```{r}
+average_lf_part <- lf_pre %>% 
+  bind_rows(lf_post) %>%
+  filter(trial_n == 1 & accept == "yes") %>%
+  mutate(var = as.factor(var)) %>%
+  filter(var == "fvc" | var== "fev1" | var == "fev1fvc" | var == "fef2575") %>%
+  left_join(select(participants, c("id", "sex", "bmi_cat", "race_cat" )), by = "id")
+```
+
+* Gender
+
+```{r}
+average_lf_sex <- average_lf_part %>%
+  group_by(test, var, sex) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_sex, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+* BMI
+
+```{r}
+average_lf_bmi <- average_lf_part %>%
+  group_by(test, var, bmi_cat) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_bmi, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```
+
+* Race
+
+```{r}
+average_lf_race <- average_lf_part %>%
+  group_by(test, var, race_cat) %>%
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            min = min(value, na.rm = TRUE),
+            max = max(value, na.rm = TRUE)) %>%
+  arrange(desc(test), var)
+```
+
+```{r}
+kable(average_lf_race, digits = 1) %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"), full_width = F) %>%
+  row_spec(row = 0, font_size = 14, bold = T) %>%
+  collapse_rows(columns = 1:2, valign = "middle")
+```

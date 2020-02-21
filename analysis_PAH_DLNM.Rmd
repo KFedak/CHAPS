@@ -1,0 +1,31 @@
+---
+title: "PAH DLNMs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(jtools)
+library(dlnm)
+library(splines)
+```
+
+
+#load health+exp datsets needed for modeling
+
+```{r}
+lf_pre_participants_expdaily <- read_rds("output_files/modeling_data_dailyexp.rds")
+
+lf_pre_participants_exp <- read_rds("output_files/modeling_data_lifetimeexp.rds")
+
+exposures_lifetime <- read_rds("output_files/exposures_lifetime.rds") 
+lf_pre_participants <- read_rds("output_files/lf_pre_participants.rds")
+
+```
+
+
+

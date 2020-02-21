@@ -1,0 +1,327 @@
+---
+title: "Analysis"
+author: "Kristen Fedak"
+date: "12/18/2019"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(jtools)
+library(dlnm)
+library(splines)
+```
+
+# Load and create datasets 
+```{r}
+participants <- read_rds("output_files/participants.rds") %>%
+  mutate_if(is.factor, tolower)
+
+lf_pre_trial1 <- read_rds("output_files/pre_bronchodilator_lf.rds") %>%
+  dplyr::mutate_if(is.character, tolower) %>%
+  dplyr::filter(preacc == "yes" & trial_n == 1) %>%
+  dplyr::mutate(num_trials = as.numeric(numpretrials),
+         test = "pre_bronchodilator") %>%
+  dplyr:: select(-numpretrials, -preacc)
+
+
+lf_post_trial1 <- read_rds("output_files/post_bronchodilator_lf.rds") %>%
+  dplyr::mutate_if(is.character, tolower) %>%
+  dplyr::filter(postacc == "yes" & trial_n == 1) %>%
+  dplyr::mutate(num_trials = as.numeric(numposttrials),
+         test = "post_bronchodilator") %>%
+  dplyr:: select(-numposttrials, -postacc)
+```
+
+```{r}
+lf_pre_participants <- lf_pre_trial1 %>%
+  left_join(participants, by = "id") %>%
+  mutate(id = factor(id),
+                bmi_cat = factor(bmi_cat,
+                                    levels = c("normal weight", "overweight", "obese", "underweight")),
+                sex = as.factor(sex),
+                race_cat = factor(race_cat,
+                                     levels = c("hispanic", "white", "african american", "asian or pacific islander")),
+                smoke_live = factor(smoke_live,
+                                        levels = c("no", "yes")),
+                smoke_around = factor(smoke_around,
+                                        levels = c("no", "yes")),
+                smoke_current = factor(smoke_current,
+                                        levels = c("no", "yes")),
+                asthma_ever = factor(asthma_ever,
+                                        levels = c("no", "yes")),
+                visit_month = as.factor(visit_month))
+
+write_rds(lf_pre_participants, "output_files/lf_pre_participants.rds")
+
+```
+
+```{r}
+exposures_lifetime <- read_rds("output_files/exposures_lifetime.rds") 
+
+exposures_lifetime_avg <- exposures_lifetime %>%
+  #select(-exposure_year, -exposure_month, -type, -metric) %>%
+  group_by(id, pollutant) %>%
+  summarize(exp_avg_lifetime = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(id = as.factor(id))
+
+exposures_lastyear_avg <- exposures_lifetime %>%
+  #select(-exposure_month, -type, -metric) %>%
+  group_by(id, pollutant, exposure_year) %>%
+  summarize(exp_avg_year = mean(val, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(exposure_year = as.numeric(exposure_year)) %>%
+  group_by(id, pollutant) %>%
+  top_n(1, wt = exposure_year) %>%
+  ungroup() %>%
+  mutate(id = as.factor(id),
+         exp_avg_lastyear = exp_avg_year)
+
+
+lf_pre_participants_exp <- lf_pre_participants %>%
+  left_join(exposures_lifetime_avg) %>%
+  left_join(select(exposures_lastyear_avg, id, pollutant, exp_avg_lastyear))
+```
+
+```{r}
+exposures_daily <- read_rds("output_files/exposures_30day_lags.rds") %>%
+  mutate(id = as.factor(id))
+
+lf_pre_participants_expdaily <- lf_pre_participants %>%
+  left_join(exposures_daily, by = "id") 
+```
+
+#save datsets for modeling
+
+```{r}
+write_rds(lf_pre_participants_expdaily, "output_files/modeling_data_dailyexp.rds")
+
+write_rds(lf_pre_participants_exp, "output_files/modeling_data_lifetimeexp.rds")
+
+```
+
+
+# Source model functions
+
+```{r, results = 'hide'}
+  source("functions.R")
+```
+
+# Lung function base model (no pollutant exposure considered)
+
+lm(value ~ age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC
+```{r}
+fvc_mod <- mod_base(filter(lf_pre_participants, var == "fvc"))
+
+summary(fvc_mod)
+plot(fvc_mod)
+```
+
+```{r}
+summ(fvc_mod)
+effect_plot(fvc_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+## FEV1
+
+```{r}
+fev_mod <- mod_base(filter(lf_pre_participants, var == "fev1"))
+
+summary(fev_mod)
+plot(fev_mod)
+```
+
+```{r}
+summ(fev_mod)
+effect_plot(fev_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+## FEF25-75
+
+```{r}
+fef2575_mod <- mod_base(filter(lf_pre_participants, var == "fef2575"))
+
+summary(fef2575_mod)
+plot(fef2575_mod)
+```
+
+```{r}
+summ(fef2575_mod)
+effect_plot(fef2575_mod, pred = age_months, interval = TRUE, plot.points = TRUE)
+```
+
+
+# Model containing lifetime exposure metric
+
+lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC, PM25
+```{r}
+fvc_lifetime_pm25_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fvc_lifetime_pm25_mod)
+plot(fvc_lifetime_pm25_mod)
+```
+## FVC, PM10
+```{r}
+fvc_lifetime_pm10_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm10_ugm3"))
+
+summary(fvc_lifetime_pm10_mod)
+plot(fvc_lifetime_pm10_mod)
+```
+
+## FVC, no2
+```{r}
+fvc_lifetime_no2_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "no2"))
+
+summary(fvc_lifetime_no2_mod)
+plot(fvc_lifetime_no2_mod)
+```
+
+## FVC, PAHs
+```{r}
+fvc_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "pah456"))
+
+summary(fvc_lifetime_pah_mod)
+plot(fvc_lifetime_pah_mod)
+```
+
+
+
+# Model containing prior year average exposure metric
+
+lm(value ~ exp_avg_lastyear + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC, PM25
+```{r}
+fvc_lastyear_pm25_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fvc_lastyear_pm25_mod)
+plot(fvc_lastyear_pm25_mod)
+```
+## FVC, PM10
+```{r}
+fvc_lastyear_pm10_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm10_ugm3"))
+
+summary(fvc_lastyear_pm10_mod)
+plot(fvc_lastyear_pm10_mod)
+```
+
+## FVC, no2
+```{r}
+fvc_lastyear_no2_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "no2"))
+
+summary(fvc_lastyear_no2_mod)
+plot(fvc_lastyear_no2_mod)
+```
+
+## FVC, PAHs
+```{r}
+fvc_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_exp, 
+                                                var == "fvc" & 
+                                                pollutant == "pah456"))
+
+summary(fvc_lastyear_pah_mod)
+plot(fvc_lastyear_pah_mod)
+```
+
+
+# Distributed Lag Models - 30 days prior
+
+```{r}
+# step 0 choose 1 pollutant, 1 health effect only for testing model (PM2.5,)
+testdlnmdata <- lf_pre_participants_expdaily %>%
+  filter(pollutant == "pm25_ugm3" & var == "fvc")
+```
+## step 1 specify the DLNM
+```{r}
+klag <- exp(((1+log(30))/4 * 1:3)-1) #results in knots at 1.1, 3.3, and 9.98 (over the lag range of 0-30). 
+# knots for lag are equally spaced in the logarithmic scale of the 30-day lags (~ 0,1,3,10,30), which gives more flexibility at lower end (explanation given in Gasparrini, Armstrong, Kenward 2010 / code from Gasparrini 2011)
+
+basis.pol <- crossbasis(testdlnmdata$val, 
+                        lag=30, 
+#transformation on "val" which contains the numeric PM2.5 exposure value daily
+                        argvar=list(fun="ns", df=3), #, int = TRUE), 
+#this is the argument that gets passed internally to function onebasis to generate the basis matrix for the predictor variable (val). chose natural cubic spline with 3 df (3 just because - do we have a justification for a different number?)
+                        arglag=list(knots=klag)) #, int = FALSE)) 
+#this is the argument that gets passed internally to function onebasis to generate the basis matrix for the lag. The arglag list is applied to a new vector given by the sequence obtained by lag, in order to generate the matrix for the space of lags. By default, the basis functions for lags are defined with an intercept (if not otherwise stated). Put in list(knots=klag) to specify what the knots for the lag are (defined by object klag).
+
+# note for Andreas: had suggested setting argval int = TRUE, arglag int = FALSE. But this causes an error when try to run crosspred in step 2 - says Error in crosspred(basis.pol, model, cen = 0) : coef/vcov not consistent with basis matrix. See help(crosspred))
+
+summary(basis.pol)
+```
+
+```{r}
+model <- glm(value ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = testdlnmdata)
+# didn't specify the family object for the glm
+```
+
+## step 2 predict the dlnm
+```{r}
+pred.pol <- crosspred(basis.pol, model, cen=0) # centering value automatically sets to 0, meaning PM2.5 of 0 as reference
+```
+
+
+# step 3 represent the dlnm (plot)
+
+```{r}
+plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
+  #ylab="RR",
+  xlab= "PM2.5",
+  main="Lag-specific effects")
+```
+
+```{r}
+plot(pred.pol, "overall", ci="lines", ylim=c(-0.5,0.5), lwd=2, col=4,
+  xlab="PM2.5", ylab="FVC", 
+  main="Overall effect")
+```
+
+```{r}
+plot(pred.pol, xlab="pm2.5", theta=240, phi=40, ltheta=-185,
+  zlab="FVC", main="3D graph")
+```
+
+```{r}
+plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
+  ylab="Lag", main="Contour graph"), key.title=title("FVC"))
+```
+
+```{r}
+plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
+for(i in 1:4) lines(pred.pol, "slices", var=c(5,15,25,35)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM2.5 =",c(5,10,15,25,35)), col=2:4, lwd=1.5)
+## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though... 
+```
+
+```{r fig.height=12, fig.width = 8}
+plot(pred.pol, var=c(5,10,15,20,25,30,35), lag=c(0,1,2,3,7,14,30), ci.level=0.95, col=2, 
+  xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
+```
+
