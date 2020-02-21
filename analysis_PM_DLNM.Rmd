@@ -140,8 +140,8 @@ plot(fef_lastyear_pm_mod)
 
 ```{r}
 # step 0 - limit health effect and pollutant
-pm_fvc_30day_dlnm <- lf_pre_participants_expdaily %>%
-  filter(var == "fvc" & pollutant == "pm25_ugm3")
+pm_fvc_30day_dlnm <- pm_lf_expdaily %>%
+  filter(var == "fvc")
 ```
 
 ### step 1 specify
@@ -150,9 +150,9 @@ pm_fvc_30day_dlnm <- lf_pre_participants_expdaily %>%
 klag <- exp(((1+log(30))/4 * 1:3)-1) #results in knots at 1.1, 3.3, and 9.98 (over the lag range of 0-30). 
 # knots for lag are equally spaced in the logarithmic scale of the 30-day lags (~ 0,1,3,10,30), which gives more flexibility at lower end (explanation given in Gasparrini, Armstrong, Kenward 2010 / code from Gasparrini 2011)
 
-basis.pol <- crossbasis(pm_fvc_30day_dlnm$val, 
+basis.pol <- crossbasis(pm_fvc_30day_dlnm$val_pol, 
                         lag=30, 
-#transformation on "val_pol" which contains the numeric PAH exposure value daily
+#transformation on "val_pol" which contains the numeric PM exposure value daily
                         argvar=list(fun="ns", df=3), #, int = TRUE), 
 #this is the argument that gets passed internally to function onebasis to generate the basis matrix for the predictor variable (val). chose natural cubic spline with 3 df (3 just because - do we have a justification for a different number?)
                         arglag=list(knots=klag)) #, int = FALSE)) 
@@ -162,7 +162,7 @@ summary(basis.pol)
 ```
 
 ```{r}
-model_fvc <- glm(value ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pah_fvc_30day_dlnm)
+model_fvc <- glm(val_lf ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pm_fvc_30day_dlnm)
 ```
 
 ### step 2 predict 
@@ -176,52 +176,52 @@ pred.pol <- crosspred(basis.pol, model_fvc, cen=0) # centering value automatical
 ```{r}
 plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
   #ylab="RR",
-  xlab= "PAH",
+  xlab= "PM2.5",
   main="Lag-specific effects: FVC")
 ```
 
 ```{r}
 plot(pred.pol, "overall", ci="lines", ylim=c(-0.4,0.2), lwd=2, col=4,
-  xlab="PAH", ylab="FVC", 
+  xlab="PM2.5", ylab="FVC", 
   main="Overall effect: FVC")
 ```
 
 ```{r}
-plot(pred.pol, xlab="PAH", theta=240, phi=40, ltheta=-185,
+plot(pred.pol, xlab="PM2.5", theta=240, phi=40, ltheta=-185,
   zlab="FVC", main="3D graph: FVC")
 ```
 
 ```{r}
-plot(pred.pol, "contour", plot.title=title(xlab="PAH",
+plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
   ylab="Lag", main="Contour graph: FVC"), key.title=title("FVC"))
 ```
 
 ```{r}
 plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
-for(i in 1:4) lines(pred.pol, "slices", var=c(10,20,50,100)[i], col=i+2, lwd=1.5)
-legend("topright", paste("PAH =",c(10,20,50,100)), col=2:4, lwd=1.5)
+for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 30)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM2.5 =",c(5,10,15,30)), col=2:4, lwd=1.5)
 ## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though. 
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(10,20,50,100, 120), lag=c(0,1,7,14, 30), ci.level=0.95, col=2, 
-  xlab="PAH", ci.arg=list(density=20,col=grey(0.7)))
+plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+  xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
 
 ## 30 day lags - FEV1
 
 ```{r}
 # step 0 - limit health effect and pollutant
-pah_fev_30day_dlnm <- lf_pre_participants_expdaily %>%
-  filter(var == "fev1" & pollutant == "pm25_ugm3")
+pm_fev_30day_dlnm <- pm_lf_expdaily %>%
+  filter(var == "fev1")
 ```
 
 ### step 1 specify
 
 ```{r}
-basis.pol <- crossbasis(pah_fev_30day_dlnm$val, 
+basis.pol <- crossbasis(pm_fev_30day_dlnm$val_pol, 
                         lag=30, 
-#transformation on "val_pol" which contains the numeric PAH exposure value daily
+#transformation on "val_pol" which contains the numeric PM exposure value daily
                         argvar=list(fun="ns", df=3), #, int = TRUE), 
 #this is the argument that gets passed internally to function onebasis to generate the basis matrix for the predictor variable (val). chose natural cubic spline with 3 df (3 just because - do we have a justification for a different number?)
                         arglag=list(knots=klag)) #, int = FALSE)) 
@@ -231,7 +231,7 @@ summary(basis.pol)
 ```
 
 ```{r}
-model_fev <- glm(value ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pah_fev_30day_dlnm)
+model_fev <- glm(val_lf ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pm_fev_30day_dlnm)
 ```
 
 ### step 2 predict
@@ -245,36 +245,36 @@ pred.pol <- crosspred(basis.pol, model_fev, cen=0) # centering value automatical
 ```{r}
 plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
   #ylab="RR",
-  xlab= "PAH",
+  xlab= "PM2.5",
   main="Lag-specific effects: FEV1")
 ```
 
 ```{r}
 plot(pred.pol, "overall", ci="lines", ylim=c(-0.4,0.2), lwd=2, col=4,
-  xlab="PAH", ylab="FEV1", 
+  xlab="PM2.5", ylab="FEV1", 
   main="Overall effect: FEV1")
 ```
 
 ```{r}
-plot(pred.pol, xlab="PAH", theta=240, phi=40, ltheta=-185,
+plot(pred.pol, xlab="PM2.5", theta=240, phi=40, ltheta=-185,
   zlab="FEV1", main="3D graph: FEV1")
 ```
 
 ```{r}
-plot(pred.pol, "contour", plot.title=title(xlab="PAH",
+plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
   ylab="Lag", main="Contour graph: FEV1"), key.title=title("FEV1"))
 ```
 
 ```{r}
 plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
-for(i in 1:4) lines(pred.pol, "slices", var=c(10,20,50,100)[i], col=i+2, lwd=1.5)
-legend("topright", paste("PAH =",c(10,20,50,100)), col=2:4, lwd=1.5)
+for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 30)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM =",c(5,10,15,30)), col=2:4, lwd=1.5)
 ## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though. 
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(10,20,50,100, 120), lag=c(0,1,7,14, 30), ci.level=0.95, col=2, 
-  xlab="PAH", ci.arg=list(density=20,col=grey(0.7)))
+plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+  xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
 
 
@@ -282,16 +282,16 @@ plot(pred.pol, var=c(10,20,50,100, 120), lag=c(0,1,7,14, 30), ci.level=0.95, col
 
 ```{r}
 # step 0 - limit health effect and pollutant
-pah_fef_30day_dlnm <- lf_pre_participants_expdaily %>%
-  filter(var == "fef2575" & pollutant == "pm25_ugm3")
+pm_fef_30day_dlnm <- pm_lf_expdaily %>%
+  filter(var == "fef2575")
 ```
 
 ### step 1 specify
 
 ```{r}
-basis.pol <- crossbasis(pah_fef_30day_dlnm$val, 
+basis.pol <- crossbasis(pm_fef_30day_dlnm$val_pol, 
                         lag=30, 
-#transformation on "val_pol" which contains the numeric PAH exposure value daily
+#transformation on "val_pol" which contains the numeric PM exposure value daily
                         argvar=list(fun="ns", df=3), #, int = TRUE), 
 #this is the argument that gets passed internally to function onebasis to generate the basis matrix for the predictor variable (val). chose natural cubic spline with 3 df (3 just because - do we have a justification for a different number?)
                         arglag=list(knots=klag)) #, int = FALSE)) 
@@ -301,7 +301,7 @@ summary(basis.pol)
 ```
 
 ```{r}
-model_fef <- glm(value ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pah_fef_30day_dlnm)
+model_fef <- glm(val_lf ~ basis.pol + age_months + ns(height_cm) + weight_kg + sex + race_cat + asthma_ever, data = pm_fef_30day_dlnm)
 ```
 
 ### step 2 predict
@@ -315,34 +315,37 @@ pred.pol <- crosspred(basis.pol, model_fef, cen=0) # centering value automatical
 ```{r}
 plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
   #ylab="RR",
-  xlab= "PAH",
+  xlab= "PM2.5",
   main="Lag-specific effects: FEF25-75")
 ```
 
 ```{r}
-plot(pred.pol, "overall", ci="lines", ylim=c(-0.4,0.2), lwd=2, col=4,
-  xlab="PAH", ylab="FEF25-75", 
+plot(pred.pol, "overall", ci="lines", ylim=c(-1.0,0.01), lwd=2, col=4,
+  xlab="PM2.5", ylab="FEF25-75", 
   main="Overall effect")
 ```
 
 ```{r}
-plot(pred.pol, xlab="PAH", theta=240, phi=40, ltheta=-185,
+plot(pred.pol, xlab="PM2.5", theta=240, phi=40, ltheta=-185,
   zlab="FEF25-75", main="3D graph: FEF25-75")
 ```
 
 ```{r}
-plot(pred.pol, "contour", plot.title=title(xlab="PAH",
+plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
   ylab="Lag", main="Contour graph: FEF25-75"), key.title=title("FEF25-75"))
 ```
 
 ```{r}
 plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
-for(i in 1:4) lines(pred.pol, "slices", var=c(10,20,50,100)[i], col=i+2, lwd=1.5)
-legend("topright", paste("PAH =",c(10,20,50,100)), col=2:4, lwd=1.5)
+for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 30)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM2.5 =",c(5,10,15,30)), col=2:4, lwd=1.5)
 ## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though. 
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(10,20,50,100, 120), lag=c(0,1,7,14, 30), ci.level=0.95, col=2, 
-  xlab="PAH", ci.arg=list(density=20,col=grey(0.7)))
+plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+  xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
+
+
+
