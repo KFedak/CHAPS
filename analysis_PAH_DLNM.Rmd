@@ -7,9 +7,10 @@ output:
       collapsed: false
       smooth_scroll: false
 ---
+# Setup
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(readxl)
 library(knitr)
@@ -20,7 +21,7 @@ library(splines)
 ```
 
 
-# load health+exp datsets needed for modeling
+## load health+exp datsets needed for modeling
 
 ```{r}
 lf_pre_participants_expdaily <- read_rds("output_files/modeling_data_dailyexp.rds") 
@@ -39,13 +40,13 @@ lf_pre_participants_expmonthly <- select(exposures_monthly, -type, -metric) %>%
 
 ```
 
-# Source model functions
+## source model functions
 
 ```{r, results = 'hide'}
   source("functions.R")
 ```
 
-# limit datasets - choose PAH data only and LF metrics FEV1, FVC, and FEF25-75
+## limit datasets - PAH  and LF metrics FEV1, FVC, and FEF25-75
 
 ```{r}
 pah_lf_expdaily <- lf_pre_participants_expdaily %>%
@@ -100,3 +101,42 @@ fef_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife,
 summary(fef_lifetime_pah_mod)
 plot(fef_lifetime_pah_mod)
 ```
+
+# prior 1 year average exposure model
+
+lm(value ~ exp_avg_lastyear + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC
+
+```{r}
+fvc_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pah456"))
+
+summary(fvc_lastyear_pah_mod)
+plot(fvc_lastyear_pah_mod)
+```
+
+## FEV1
+
+```{r}
+fev_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fev1" & 
+                                                 pollutant == "pah456"))
+
+summary(fev_lastyear_pah_mod)
+plot(fev_lastyear_pah_mod)
+```
+
+## FEF25-75
+
+```{r}
+fef_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fef2575" & 
+                                                 pollutant == "pah456"))
+
+summary(fef_lastyear_pah_mod)
+plot(fef_lastyear_pah_mod)
+```
+
+
