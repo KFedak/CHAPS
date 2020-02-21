@@ -1,6 +1,11 @@
 ---
 title: "PAH DLNMs"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
 ---
 
 ```{r setup, include=FALSE}
@@ -59,3 +64,39 @@ pah_lf_expmonthly <- lf_pre_participants_expmonthly %>%
   mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
 ```
 
+# lifetime average exposure model
+
+lm(value ~ exp_avg_lifetime + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC
+
+```{r}
+fvc_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pah456"))
+
+summary(fvc_lifetime_pah_mod)
+plot(fvc_lifetime_pah_mod)
+```
+
+## FEV1
+
+```{r}
+fev_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fev1" & 
+                                                 pollutant == "pah456"))
+
+summary(fev_lifetime_pah_mod)
+plot(fev_lifetime_pah_mod)
+```
+
+## FEF25-75
+
+```{r}
+fef_lifetime_pah_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fef2575" & 
+                                                 pollutant == "pah456"))
+
+summary(fef_lifetime_pah_mod)
+plot(fef_lifetime_pah_mod)
+```
