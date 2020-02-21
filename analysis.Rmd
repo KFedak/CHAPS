@@ -60,6 +60,9 @@ lf_pre_participants <- lf_pre_trial1 %>%
                 asthma_ever = factor(asthma_ever,
                                         levels = c("no", "yes")),
                 visit_month = as.factor(visit_month))
+
+write_rds(lf_pre_participants, "output_files/lf_pre_participants.rds")
+
 ```
 
 ```{r}
@@ -96,6 +99,15 @@ exposures_daily <- read_rds("output_files/exposures_30day_lags.rds") %>%
 
 lf_pre_participants_expdaily <- lf_pre_participants %>%
   left_join(exposures_daily, by = "id") 
+```
+
+#save datsets for modeling
+
+```{r}
+write_rds(lf_pre_participants_expdaily, "output_files/modeling_data_dailyexp.rds")
+
+write_rds(lf_pre_participants_exp, "output_files/modeling_data_lifetimeexp.rds")
+
 ```
 
 
