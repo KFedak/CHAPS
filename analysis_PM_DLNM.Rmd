@@ -186,7 +186,7 @@ plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
 ```
 
 ```{r}
-plot(pred.pol, "overall", ci="lines", ylim=c(-0.4,0.2), lwd=2, col=4,
+plot(pred.pol, "overall", ci="lines", ylim=c(-0.5,0.001), lwd=2, col=4,
   xlab="PM2.5", ylab="FVC", 
   main="Overall effect: FVC")
 ```
@@ -203,13 +203,13 @@ plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
 
 ```{r}
 plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
-for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 30)[i], col=i+2, lwd=1.5)
-legend("topright", paste("PM2.5 =",c(5,10,15,30)), col=2:4, lwd=1.5)
+for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 35)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM2.5 =",c(5,10,15,35)), col=2:4, lwd=1.5)
 ## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though. 
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+plot(pred.pol, var=c(5,10,15,20,35), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
   xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
 
@@ -255,7 +255,7 @@ plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
 ```
 
 ```{r}
-plot(pred.pol, "overall", ci="lines", ylim=c(-0.4,0.2), lwd=2, col=4,
+plot(pred.pol, "overall", ci="lines", ylim=c(-0.5,0.2), lwd=2, col=4,
   xlab="PM2.5", ylab="FEV1", 
   main="Overall effect: FEV1")
 ```
@@ -272,13 +272,13 @@ plot(pred.pol, "contour", plot.title=title(xlab="PM2.5",
 
 ```{r}
 plot(pred.pol, var = 10, ci="area", ylim=c(-0.05,0.05), lwd=1.5, col=2) 
-for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 30)[i], col=i+2, lwd=1.5)
-legend("topright", paste("PM =",c(5,10,15,30)), col=2:4, lwd=1.5)
+for(i in 1:4) lines(pred.pol, "slices", var=c(5, 10, 15, 35)[i], col=i+2, lwd=1.5)
+legend("topright", paste("PM =",c(5,10,15,35)), col=2:4, lwd=1.5)
 ## this is old code style - need to run all three lines in one block rather than successive for it to work while within R; knit works fine though. 
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+plot(pred.pol, var=c(5,10,15,20,35), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
   xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
 
@@ -325,7 +325,7 @@ plot(pred.pol, type="p", pch=19, cex=1.5, ci="bars", col=2,
 ```
 
 ```{r}
-plot(pred.pol, "overall", ci="lines", ylim=c(-1.0,0.01), lwd=2, col=4,
+plot(pred.pol, "overall", ci="lines", ylim=c(-0.5,0.5), lwd=2, col=4,
   xlab="PM2.5", ylab="FEF25-75", 
   main="Overall effect")
 ```
@@ -348,7 +348,7 @@ legend("topright", paste("PM2.5 =",c(5,10,15,30)), col=2:4, lwd=1.5)
 ```
 
 ```{r fig.height=12, fig.width = 8}
-plot(pred.pol, var=c(5,10,15,20,30), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
+plot(pred.pol, var=c(5,10,15,20,35), lag=c(0,1,7,14,30), ci.level=0.95, col=2, 
   xlab="PM2.5", ci.arg=list(density=20,col=grey(0.7)))
 ```
 
