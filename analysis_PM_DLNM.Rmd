@@ -37,6 +37,14 @@ lf_pre_participants_expmonthly <- select(exposures_monthly, -type, -metric) %>%
                    id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
             by = "id")
 
+
+lf_pre_exp12months <- read_rds("output_files/exposures_avg_12months.rds")%>%
+  mutate(id = as.factor(id)) %>%
+  left_join(select(lf_pre_participants, 
+                   id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
+            by = "id")
+
+  
 ```
 
 # Source model functions
@@ -59,6 +67,11 @@ pm_lf_expdaily <- lf_pre_participants_expdaily %>%
 
 
 pm_lf_expmonthly <- lf_pre_participants_expmonthly %>%
+  filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
+  filter(pollutant == "pm25_ugm3") %>%
+  mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
+
+pm_lf_exp12monthly <- lf_pre_participants_expmonthly %>%
   filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
   filter(pollutant == "pm25_ugm3") %>%
   mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
