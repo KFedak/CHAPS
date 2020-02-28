@@ -21,3 +21,10 @@ mod_lastyear_exp <- function(df){
      data = df)
 }
 #________________________________________________________________________
+
+#_______prior months average exposure LF model______________________________
+mod_priormonths_exp <- function(df){
+  lm(value ~ val + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever,
+     data = df)
+}
+#________________________________________________________________________

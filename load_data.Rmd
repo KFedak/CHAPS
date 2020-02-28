@@ -152,6 +152,8 @@ kable(head(post_lf_long), digits = 2) %>% kable_styling(bootstrap_options = c("s
 ```{r}
 
 year_prior <- "../Yearprior_Exposure/C7_CO_O3_PM_YearPrior_Exposures_2014-2017_17Apr2018_forReleasev2.xlsx"
+
+year_prior2 <- "../Yearprior_Exposure/CHAPSexposures_NO2_NOX_PAH456_EC_prior_yearv2.xlsx"
 # CO
 co_yrprior <- read_xlsx(path = year_prior, sheet = 2, na = "-99") %>%
   rename_all(tolower) %>%
@@ -181,6 +183,27 @@ pm25_yrprior <- read_xlsx(path = year_prior, sheet = 5, na = "-99") %>%
   pivot_longer(cols = -c("id", "month", "day", "year"),
   names_to = "lag", values_to = "pm25_ugm3")
 
+#PAH456
+pah_yrprior <- read_xlsx(path = year_prior2, sheet = 2) %>%
+  rename_all(tolower) %>%
+  dplyr::rename(pah456date_visit = "drawdate",
+                pah456id = "id") %>%
+  select_if(grepl("pah456", colnames(.))) 
+
+colnames(pah_yrprior) <- gsub("pah456", "", colnames(pah_yrprior))
+
+pah_yrprior <- pah_yrprior %>%
+  pivot_longer(cols = -c("id", "date_visit"),
+               names_to = "metric", values_to = "val") %>%
+  mutate(pollutant = "pah456")
+
+pah_yrprior$metric <- sub("meanmonth", "1-month-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("meanyear", "12-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("mean3month", "3-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("mean6month", "6-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("meanweek", "1-week-before", pah_yrprior$metric)
+
+
 #combine
 
 exposures_yrprior <- co_yrprior %>%
@@ -194,7 +217,8 @@ exposures_yrprior <- co_yrprior %>%
                                  format = "%F", tz = "US/Pacific")),
          pollutant = as.factor(pollutant),
          metric = as.factor(metric)) %>%
-  select(-year, -month, -day)
+  select(-year, -month, -day) %>%
+  bind_rows(pah_yrprior)
 
 # split to 30-day daily lag data vs averaged over different time periods data
 
@@ -204,7 +228,7 @@ exposures_30daylags <- exposures_yrprior %>%
          date_exp_measure = as.Date((as.Date(date_visit) - (lag_days))))
 
 exposures_avg_12months <- exposures_yrprior %>%
-  filter(grepl("before", metric))
+  filter(!grepl("lag", metric))
 ```
 
 ## Column names and types - daily, 30-day lag:
