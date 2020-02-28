@@ -71,10 +71,9 @@ pm_lf_expmonthly <- lf_pre_participants_expmonthly %>%
   filter(pollutant == "pm25_ugm3") %>%
   mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
 
-pm_lf_exp12monthly <- lf_pre_participants_expmonthly %>%
+pm_lf_exp12monthly <- lf_pre_exp12months %>%
   filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
-  filter(pollutant == "pm25_ugm3") %>%
-  mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
+  filter(pollutant == "pm25_ugm3")
 
 ```
 
@@ -150,6 +149,43 @@ fef_lastyear_pm_mod <- mod_lastyear_exp(filter(lf_pre_participants_expyearlife,
 
 summary(fef_lastyear_pm_mod)
 plot(fef_lastyear_pm_mod)
+```
+
+# prior month average exposure model
+
+lm(value ~ exp_XXX + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC
+
+```{r}
+fvc_lifetime_pm_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fvc" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fvc_lifetime_pm_mod)
+plot(fvc_lifetime_pm_mod)
+```
+
+## FEV1
+
+```{r}
+fev_lifetime_pm_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fev1" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fev_lifetime_pm_mod)
+plot(fev_lifetime_pm_mod)
+```
+
+## FEF25-75
+
+```{r}
+fef_lifetime_pm_mod <- mod_lifetime_exp(filter(lf_pre_participants_expyearlife, 
+                                                 var == "fef2575" & 
+                                                 pollutant == "pm25_ugm3"))
+
+summary(fef_lifetime_pm_mod)
+plot(fef_lifetime_pm_mod)
 ```
 
 # DLNMs
