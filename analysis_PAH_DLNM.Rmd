@@ -38,6 +38,11 @@ lf_pre_participants_expmonthly <- select(exposures_monthly, -type, -metric) %>%
                    id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
             by = "id")
 
+lf_pre_exp12months <- read_rds("output_files/exposures_avg_12months.rds")%>%
+  mutate(id = as.factor(id)) %>%
+  left_join(select(lf_pre_participants, 
+                   id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
+            by = "id")
 ```
 
 ## source model functions
@@ -65,6 +70,10 @@ pah_lf_expmonthly <- lf_pre_participants_expmonthly %>%
   filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
   filter(pollutant == "pah456") %>%
   mutate(exp_month = as.Date(paste0(exposure_year, "-", exposure_month, "-1"), format = "%Y-%m-%d"))
+
+pah_lf_exp12monthly <- lf_pre_exp12months %>%
+  filter(var == "fev1" | var == "fvc" | var == "fef2575") %>%
+  filter(pollutant == "pah456")
 ```
 
 # lifetime average exposure model
@@ -140,6 +149,44 @@ fef_lastyear_pah_mod <- mod_lastyear_exp(filter(lf_pre_participants_expyearlife,
 summary(fef_lastyear_pah_mod)
 plot(fef_lastyear_pah_mod)
 ```
+
+# prior month average exposure model
+
+lm(value ~ val(metric filtered) + age_months + height_cm^2 + weight_kg + sex + race_cat + asthma_ever)
+
+## FVC
+
+```{r}
+fvc_1month_pah_mod <- mod_priormonths_exp(filter(pah_lf_exp12monthly, 
+                                                 var == "fvc" & 
+                                                 metric == "1-month-before"))
+
+summary(fvc_1month_pah_mod)
+plot(fvc_1month_pah_mod)
+```
+
+## FEV1
+
+```{r}
+fev_1month_pah_mod <- mod_priormonths_exp(filter(pah_lf_exp12monthly, 
+                                                 var == "fev1" & 
+                                                 metric == "1-month-before"))
+
+summary(fev_1month_pah_mod)
+plot(fev_1month_pah_mod)
+```
+
+## FEF25-75
+
+```{r}
+fef_1month_pah_mod <- mod_priormonths_exp(filter(pah_lf_exp12monthly, 
+                                                 var == "fef2575" & 
+                                                 metric == "1-month-before"))
+
+summary(fef_1month_pah_mod)
+plot(fef_1month_pah_mod)
+```
+
 
 # DLNMs
 
