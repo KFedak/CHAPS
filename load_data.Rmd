@@ -197,6 +197,11 @@ pah_yrprior <- pah_yrprior %>%
                names_to = "metric", values_to = "val") %>%
   mutate(pollutant = "pah456")
 
+pah_yrprior$metric <- sub("meanmonth", "1-month-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("meanyear", "12-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("mean3month", "3-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("mean6month", "6-months-before", pah_yrprior$metric)
+pah_yrprior$metric <- sub("meanweek", "1-week-before", pah_yrprior$metric)
 
 
 #combine
@@ -223,7 +228,7 @@ exposures_30daylags <- exposures_yrprior %>%
          date_exp_measure = as.Date((as.Date(date_visit) - (lag_days))))
 
 exposures_avg_12months <- exposures_yrprior %>%
-  filter(grepl("before", metric))
+  filter(!grepl("lag", metric))
 ```
 
 ## Column names and types - daily, 30-day lag:
