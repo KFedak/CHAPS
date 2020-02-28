@@ -37,14 +37,12 @@ lf_pre_participants_expmonthly <- select(exposures_monthly, -type, -metric) %>%
                    id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
             by = "id")
 
-
 lf_pre_exp12months <- read_rds("output_files/exposures_avg_12months.rds")%>%
   mutate(id = as.factor(id)) %>%
   left_join(select(lf_pre_participants, 
                    id, var, value, age_months, height_cm, weight_kg, sex, race_cat, asthma_ever), 
             by = "id")
 
-  
 ```
 
 # Source model functions
